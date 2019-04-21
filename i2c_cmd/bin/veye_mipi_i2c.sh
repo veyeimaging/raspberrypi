@@ -5,18 +5,19 @@
 #set camera i2c pin mux
 #
 
-I2C_DEV=0;
+I2C_DEV=1;
 I2C_ADDR=0x3b;
 
 print_usage()
 {
-	echo "Usage:  ./veye_mipi_290_isp.sh [-r/w] [-f] function name -p1 param1 -p2 param2 "
+	echo "Usage:  ./veye_mipi_i2c.sh [-r/w] [-f] function name -p1 param1 -p2 param2 -b bus"
 	echo "options:"
 	echo "    -r                       read "
 	echo "    -w                       write"
 	echo "    -f [function name]       function name"
 	echo "    -p1 [param1] 			   param1 of each function"
 	echo "    -p2 [param1] 			   param2 of each function"
+	echo "    -b [i2c bus num] 		   i2c bus number"
 	echo -e "function list and param,ref to [veye_mipi_290_isp_function_and_param.pdf]"
 	echo "support functions: devid,hdver,wdrmode,videoformat,mirrormode,denoise,agc,lowlight,daynightmode,ircutdir,irtrigger"
 }
@@ -28,6 +29,7 @@ PARAM2=0;
 b_arg_param1=0;
 b_arg_param2=0;
 b_arg_functin=0;
+b_arg_bus=0;
 
 for arg in $@
 do
@@ -48,6 +50,10 @@ do
 		b_arg_param2=0;
 		PARAM2=$arg;
 	fi
+	if [ $b_arg_bus -eq 1 ] ; then
+		b_arg_bus=0;
+		I2C_DEV=$arg;
+	fi
 	case $arg in
 		"-r")
 			MODE=read;
@@ -63,6 +69,9 @@ do
 			;;
 		"-p2")
 			b_arg_param2=1;
+			;;
+		"-b")
+			b_arg_bus=1;
 			;;
 		"-h")
 			print_usage;
