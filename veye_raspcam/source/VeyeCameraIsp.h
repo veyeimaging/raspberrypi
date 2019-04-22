@@ -16,7 +16,7 @@ typedef struct
 
 void veye_camera_isp_set_defaults(VEYE_CAMERA_ISP_STATE *state);
 
- MMAL_STATUS_T create_veye_camera_isp_component(VEYE_CAMERA_ISP_STATE *state);
+ MMAL_STATUS_T create_veye_camera_isp_component(VEYE_CAMERA_ISP_STATE *state,int cameraNum);
 
 void destroy_veye_camera_isp_component(VEYE_CAMERA_ISP_STATE *state);
 

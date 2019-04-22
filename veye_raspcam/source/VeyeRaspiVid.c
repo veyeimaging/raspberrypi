@@ -436,7 +436,7 @@ static void default_status(RASPIVID_STATE *state)
    state->splitWait = 0;
 
    state->inlineMotionVectors = 0;
-   state->cameraNum = 0;
+   state->cameraNum = -1;
    state->settings = 0;
    state->sensor_mode = 0;
 
@@ -2544,7 +2544,7 @@ int main(int argc, const char **argv)
    // OK, we have a nice set of parameters. Now set up our components
    // We have three components. Camera, Preview and encoder.
 
-   if ((status = create_veye_camera_isp_component(&state.veye_camera_isp_state)) != MMAL_SUCCESS)
+   if ((status = create_veye_camera_isp_component(&state.veye_camera_isp_state,state.cameraNum)) != MMAL_SUCCESS)
    {
       vcos_log_error("%s: Failed to create camera component", __func__);
       exit_code = EX_SOFTWARE;

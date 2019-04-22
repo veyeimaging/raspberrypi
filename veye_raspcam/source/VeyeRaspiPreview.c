@@ -248,7 +248,7 @@ static void default_status(RASPIPREVIEW_STATE *state)
   // raspicamcontrol_set_defaults(&state->camera_parameters);
 
    // Set default camera
-   state->cameraNum = 0;
+   state->cameraNum = -1;
 }
 
 /**
@@ -724,7 +724,7 @@ int main(int argc, const char **argv)
    // Camera is different in stills/video, but preview
    // is the same so handed off to a separate module
    fprintf(stderr, "before create camera com \n");
-   if ((status = create_veye_camera_isp_component(&state.veye_camera_isp_state)) != MMAL_SUCCESS)
+   if ((status = create_veye_camera_isp_component(&state.veye_camera_isp_state,state.cameraNum)) != MMAL_SUCCESS)
    {
       vcos_log_error("%s: Failed to create camera component", __func__);
       exit_code = EX_SOFTWARE;

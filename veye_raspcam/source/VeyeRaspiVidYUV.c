@@ -284,7 +284,7 @@ static void default_status(RASPIVIDYUV_STATE *state)
 
    state->bCapturing = 0;
 
-   state->cameraNum = 0;
+   state->cameraNum = -1;
    state->settings = 0;
    state->sensor_mode = 0;
    state->onlyLuma = 0;
@@ -1155,7 +1155,7 @@ int main(int argc, const char **argv)
 
    // OK, we have a nice set of parameters. Now set up our components
    // We have two components. Camera, Preview
-   if ((status = create_veye_camera_isp_component(&state.veye_camera_isp_state)) != MMAL_SUCCESS)
+   if ((status = create_veye_camera_isp_component(&state.veye_camera_isp_state,state.cameraNum)) != MMAL_SUCCESS)
    {
       vcos_log_error("%s: Failed to create camera component", __func__);
       exit_code = EX_SOFTWARE;
