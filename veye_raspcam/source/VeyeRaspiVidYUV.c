@@ -189,7 +189,7 @@ static XREF_T  initial_map[] =
 static int initial_map_size = sizeof(initial_map) / sizeof(initial_map[0]);
 
 
-static void display_valid_parameters(char *app_name);
+static void display_valid_parameters( char *app_name);
 
 /// Command ID's and Structure defining our command line options
 #define CommandHelp         0
@@ -230,7 +230,7 @@ static COMMAND_LIST cmdline_commands[] =
    { CommandSettings,      "-settings",   "set","Retrieve camera settings and write to stdout", 0},
    { CommandSensorMode,    "-mode",       "md", "Force sensor mode. 0=auto. See docs for other modes available", 1},
    { CommandOnlyLuma,      "-luma",       "y",  "Only output the luma / Y of the YUV data'", 0},
-   { CommandUseRGB,        "-rgb",        "rgb","Save as RGB data rather than YUV", 0},
+   { CommandUseRGB,        "-rgb",        "rgb","Save as RGB data rather than YUV, not supported!", 0},
    { CommandSavePTS,       "-save-pts",   "pts","Save Timestamps to file", 1 },
    { CommandNetListen,     "-listen",     "l", "Listen on a TCP socket", 0},
 };
@@ -284,7 +284,7 @@ static void default_status(RASPIVIDYUV_STATE *state)
 
    state->bCapturing = 0;
 
-   state->cameraNum = -1;
+   state->cameraNum = 0;
    state->settings = 0;
    state->sensor_mode = 0;
    state->onlyLuma = 0;
@@ -385,7 +385,7 @@ static int parse_cmdline(int argc, const char **argv, RASPIVIDYUV_STATE *state)
       switch (command_id)
       {
       case CommandHelp:
-         display_valid_parameters(basename(argv[0]));
+         display_valid_parameters(basename((char*)argv[0]));
          return -1;
 
       case CommandWidth: // Width > 0
@@ -621,7 +621,7 @@ static int parse_cmdline(int argc, const char **argv, RASPIVIDYUV_STATE *state)
  *
  * @param app_name String to display as the application name
  */
-static void display_valid_parameters(char *app_name)
+static void display_valid_parameters( char *app_name)
 {
    fprintf(stdout, "Display camera output to display, and optionally saves an uncompressed YUV420 file \n\n");
    fprintf(stdout, "NOTE: High resolutions and/or frame rates may exceed the bandwidth of the system due\n");
@@ -1134,9 +1134,9 @@ int main(int argc, const char **argv)
    // Do we have any parameters
    if (argc == 1)
    {
-      fprintf(stdout, "\n%s Camera App %s\n\n", basename(argv[0]), VERSION_STRING);
+      fprintf(stdout, "\n%s Camera App %s\n\n", basename((char*)argv[0]), VERSION_STRING);
 
-      display_valid_parameters(basename(argv[0]));
+      display_valid_parameters(basename((char*)argv[0]));
       exit(EX_USAGE);
    }
 
@@ -1149,7 +1149,7 @@ int main(int argc, const char **argv)
 
    if (state.verbose)
    {
-      fprintf(stderr, "\n%s Camera App %s\n\n", basename(argv[0]), VERSION_STRING);
+      fprintf(stderr, "\n%s Camera App %s\n\n", basename((char*)argv[0]), VERSION_STRING);
       dump_status(&state);
    }
 
@@ -1298,6 +1298,7 @@ int main(int argc, const char **argv)
                   if (mmal_port_parameter_set_boolean(camera_video_port, MMAL_PARAMETER_CAPTURE, state.bCapturing) != MMAL_SUCCESS)
                   {
                      // How to handle?
+                     vcos_log_error("%s: Failed to start capture %d ", __func__,state.bCapturing);
                   }
 
                   if (state.verbose)

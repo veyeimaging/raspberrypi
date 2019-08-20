@@ -291,7 +291,7 @@ static XREF_T  raw_output_fmt_map[] =
 
 static int raw_output_fmt_map_size = sizeof(raw_output_fmt_map) / sizeof(raw_output_fmt_map[0]);
 
-static void display_valid_parameters(char *app_name);
+static void display_valid_parameters( char *app_name);
 
 /// Command ID's and Structure defining our command line options
 #define CommandHelp         0
@@ -414,6 +414,7 @@ static void default_status(RASPIVID_STATE *state)
    state->height = 1080;
    state->encoding = MMAL_ENCODING_H264;
    state->bitrate = 17000000; // This is a decent default bitrate for 1080p
+  // state->bitrate = 17000; // This is a decent default bitrate for 1080p
    state->framerate = VIDEO_FRAME_RATE_NUM;
    state->intraperiod = -1;    // Not set
    state->quantisationParameter = 0;
@@ -436,7 +437,7 @@ static void default_status(RASPIVID_STATE *state)
    state->splitWait = 0;
 
    state->inlineMotionVectors = 0;
-   state->cameraNum = -1;
+   state->cameraNum = 0;
    state->settings = 0;
    state->sensor_mode = 0;
 
@@ -573,7 +574,7 @@ static int parse_cmdline(int argc, const char **argv, RASPIVID_STATE *state)
       switch (command_id)
       {
       case CommandHelp:
-         display_valid_parameters(basename(argv[0]));
+         display_valid_parameters(basename((char*)argv[0]));
          return -1;
 
       case CommandWidth: // Width > 0
@@ -821,6 +822,8 @@ static int parse_cmdline(int argc, const char **argv, RASPIVID_STATE *state)
          }
          else
             valid = 0;
+
+	   fprintf(stderr, "camera num %d\n",state->cameraNum);
          break;
       }
 
@@ -970,7 +973,7 @@ static int parse_cmdline(int argc, const char **argv, RASPIVID_STATE *state)
  *
  * @param app_name String to display as the application name
  */
-static void display_valid_parameters(char *app_name)
+static void display_valid_parameters( char *app_name)
 {
    int i;
 
@@ -1445,9 +1448,11 @@ static void encoder_buffer_callback(MMAL_PORT_T *port, MMAL_BUFFER_HEADER_T *buf
             }
             else
             {
+            //  vcos_log_error("write data %d ",buffer->length);
                bytes_written = fwrite(buffer->data, 1, buffer->length, pData->file_handle);
                if(pData->flush_buffers) fflush(pData->file_handle);
-
+		//bytes_written = buffer->length;
+			   
                if(pData->pstate->save_pts &&
                   (buffer->flags & MMAL_BUFFER_HEADER_FLAG_FRAME_END ||
                    buffer->flags == 0 ||
@@ -2374,9 +2379,10 @@ static int wait_for_next_change(RASPIVID_STATE *state)
       complete_time =  current_time + state->timeout;
 
    // if we have run out of time, flag we need to exit
-   if (current_time >= complete_time && state->timeout != 0)
-      keep_running = 0;
-
+   if (current_time >= complete_time && state->timeout != 0){
+   		vcos_log_error("%s: time out here !", __func__);
+      		keep_running = 0;
+   	}
    switch (state->waitMethod)
    {
    case WAIT_METHOD_NONE:
@@ -2386,7 +2392,7 @@ static int wait_for_next_change(RASPIVID_STATE *state)
    case WAIT_METHOD_FOREVER:
    {
       // We never return from this. Expect a ctrl-c to exit.
-      while (1)
+      	while (1)
          // Have a sleep so we don't hog the CPU.
          vcos_sleep(10000);
 
@@ -2496,7 +2502,7 @@ int main(int argc, const char **argv)
 
    MMAL_STATUS_T status = MMAL_SUCCESS;
    MMAL_PORT_T *camera_preview_port = NULL;
-  MMAL_PORT_T *camera_video_port = NULL;
+   MMAL_PORT_T *camera_video_port = NULL;
 //   MMAL_PORT_T *camera_still_port = NULL;
    MMAL_PORT_T *preview_input_port = NULL;
    MMAL_PORT_T *encoder_input_port = NULL;
@@ -2520,9 +2526,9 @@ int main(int argc, const char **argv)
    // Do we have any parameters
    if (argc == 1)
    {
-      fprintf(stdout, "\n%s Camera App %s\n\n", basename(argv[0]), VERSION_STRING);
+      fprintf(stdout, "\n%s Camera App %s\n\n", basename((char*)argv[0]), VERSION_STRING);
 
-      display_valid_parameters(basename(argv[0]));
+      display_valid_parameters(basename((char*)argv[0]));
       exit(EX_USAGE);
    }
 
@@ -2532,10 +2538,10 @@ int main(int argc, const char **argv)
       status = -1;
       exit(EX_USAGE);
    }
-
+ fprintf(stderr, "camera num %d\n",state.cameraNum);
    if (state.verbose)
    {
-      fprintf(stderr, "\n%s Camera App %s\n\n", basename(argv[0]), VERSION_STRING);
+      fprintf(stderr, "\n%s Camera App %s\n\n", basename((char*)argv[0]), VERSION_STRING);
       dump_status(&state);
    }
 
@@ -2602,6 +2608,7 @@ int main(int argc, const char **argv)
             if (state.filename[0] == '-')
             {
                state.callback_data.file_handle = stdout;
+		 vcos_log_error("file handle is stdout!");
             }
             else
             {
@@ -2762,7 +2769,7 @@ int main(int argc, const char **argv)
             if (state.callback_data.file_handle)
             {
                int running = 1;
-
+		 vcos_log_error("running now!!");
                // Send all the buffers to the encoder output port
                {
                   int num = mmal_queue_length(state.encoder_pool->queue);
@@ -2795,53 +2802,53 @@ int main(int argc, const char **argv)
                   }
                }
 */
-               int initialCapturing=state.bCapturing;
+              int initialCapturing=state.bCapturing;
                while (running)
                {
                   // Change state
 
-                  state.bCapturing = !state.bCapturing;
+	               state.bCapturing = !state.bCapturing;
 
-                  if (mmal_port_parameter_set_boolean(camera_video_port, MMAL_PARAMETER_CAPTURE, state.bCapturing) != MMAL_SUCCESS)
-                  {
-                     // How to handle?
-                  }
+	                  if (mmal_port_parameter_set_boolean(camera_video_port, MMAL_PARAMETER_CAPTURE, state.bCapturing) != MMAL_SUCCESS)
+	                  {
+	                     // How to handle?
+	                  }
 
-                  // In circular buffer mode, exit and save the buffer (make sure we do this after having paused the capture
-                  if(state.bCircularBuffer && !state.bCapturing)
-                  {
-                     break;
-                  }
+	                  // In circular buffer mode, exit and save the buffer (make sure we do this after having paused the capture
+	                  if(state.bCircularBuffer && !state.bCapturing)
+	                  {
+	                     break;
+	                  }
 
-                  if (state.verbose)
-                  {
-                     if (state.bCapturing)
-                        fprintf(stderr, "Starting video capture\n");
-                     else
-                        fprintf(stderr, "Pausing video capture\n");
-                  }
+	                  if (state.verbose)
+	                  {
+	                     if (state.bCapturing)
+	                        fprintf(stderr, "Starting video capture\n");
+	                     else
+	                        fprintf(stderr, "Pausing video capture\n");
+	                  }
 
-                  if(state.splitWait)
-                  {
-                     if(state.bCapturing)
-                     {
-                        if (mmal_port_parameter_set_boolean(encoder_output_port, MMAL_PARAMETER_VIDEO_REQUEST_I_FRAME, 1) != MMAL_SUCCESS)
-                        {
-                           vcos_log_error("failed to request I-FRAME");
-                        }
-                     }
-                     else
-                     {
-                        if(!initialCapturing)
-                           state.splitNow=1;
-                     }
-                     initialCapturing=0;
-                  }
-                  running = wait_for_next_change(&state);
-               }
-
-               if (state.verbose)
-                  fprintf(stderr, "Finished capture\n");
+	                  if(state.splitWait)
+	                  {
+	                     if(state.bCapturing)
+	                     {
+	                        if (mmal_port_parameter_set_boolean(encoder_output_port, MMAL_PARAMETER_VIDEO_REQUEST_I_FRAME, 1) != MMAL_SUCCESS)
+	                        {
+	                           vcos_log_error("failed to request I-FRAME");
+	                        }
+	                     }
+	                     else
+	                     {
+	                        if(!initialCapturing)
+	                           state.splitNow=1;
+	                     }
+	                     initialCapturing=0;
+	                  }
+	                  running = wait_for_next_change(&state);
+	               }
+			vcos_log_error("running stop!! %d",running);
+	               if (state.verbose)
+	                  fprintf(stderr, "Finished capture\n");
             }
             else
             {
