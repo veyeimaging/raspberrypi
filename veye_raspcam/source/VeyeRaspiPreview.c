@@ -793,11 +793,11 @@ error:
       /* Disable components */
       if (state.preview_parameters.preview_component)
          mmal_component_disable(state.preview_parameters.preview_component);
-	  if (state.veye_camera_isp_state.isp_component)
+	/*  if (state.veye_camera_isp_state.isp_component)
          mmal_component_disable(state.veye_camera_isp_state.isp_component);
       if (state.veye_camera_isp_state.camera_component)
          mmal_component_disable(state.veye_camera_isp_state.camera_component);
-
+	*/
 
       raspipreview_destroy(&state.preview_parameters);
       destroy_veye_camera_isp_component(&state.veye_camera_isp_state);
