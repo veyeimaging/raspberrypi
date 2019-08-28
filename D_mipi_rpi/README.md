@@ -73,7 +73,7 @@ Capture one jpeg image.
 
 - capture_yuv.py
 
-capture_yuv
+Capture one yuv image.
 
 - video.py
 
