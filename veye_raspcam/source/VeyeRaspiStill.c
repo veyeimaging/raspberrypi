@@ -285,7 +285,7 @@ static void default_status(RASPISTILL_STATE *state)
   // raspicamcontrol_set_defaults(&state->camera_parameters);
 veye_camera_isp_set_defaults(&state->veye_camera_isp_state);
    // Set default camera
-   state->cameraNum = 0;
+   state->cameraNum = -1;
 }
 
 /**

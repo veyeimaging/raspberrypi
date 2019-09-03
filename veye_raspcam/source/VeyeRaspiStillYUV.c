@@ -250,7 +250,7 @@ static void default_status(RASPISTILLYUV_STATE *state)
   // raspicamcontrol_set_defaults(&state->camera_parameters);
 
    // Set default camera
-   state->cameraNum = 0;
+   state->cameraNum = 1;
 }
 
 /**

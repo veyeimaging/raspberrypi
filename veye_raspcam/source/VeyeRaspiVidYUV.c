@@ -284,7 +284,7 @@ static void default_status(RASPIVIDYUV_STATE *state)
 
    state->bCapturing = 0;
 
-   state->cameraNum = 0;
+   state->cameraNum = -1;
    state->settings = 0;
    state->sensor_mode = 0;
    state->onlyLuma = 0;
