@@ -35,7 +35,7 @@ int main(int argc, char **argv) {
     int width = 1920, height = 1080;
     char file_name[100];
     struct camera_interface cam_interface;
-    cam_interface.camera_num = 0;
+    cam_interface.camera_num = -1;//0or1 for CM
     LOG("Open camera...");
     int res = D_init_camera(&camera_instance,cam_interface);
     if (res) {
