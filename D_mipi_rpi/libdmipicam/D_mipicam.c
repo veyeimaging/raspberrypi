@@ -504,9 +504,13 @@ int D_init_camera(CAMERA_INSTANCE *camera_instance, struct camera_interface cam_
 {
 	MMAL_STATUS_T status = MMAL_SUCCESS;
 	DCAMERA * pcamera = NULL;
-	if(cam_interface.camera_num < 0 || cam_interface.camera_num >= MAX_CAMERA_NUM)
+	if( cam_interface.camera_num >= MAX_CAMERA_NUM)
 		return -1;
-	pcamera = &g_camera[cam_interface.camera_num];
+	//default camera num
+	if(cam_interface.camera_num == -1)
+		pcamera = &g_camera[0];
+	else
+		pcamera = &g_camera[cam_interface.camera_num];
 	//参数初始化
 	default_status(pcamera);
 	pcamera->m_caminterface = cam_interface;

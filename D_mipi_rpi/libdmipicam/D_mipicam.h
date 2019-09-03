@@ -141,7 +141,7 @@ struct format {
 // i2c is reserved,because we use shell script to do do param setting
 struct camera_interface {
     int i2c_bus;        // /dev/i2c-0  or /dev/i2c-1
-    int camera_num;     // mipi interface num, the only used param in this struct
+    int camera_num;     // mipi interface num,-1 for mode B, 0,1 for mode CM the only used param in this struct
     int sda_pins[2];    // enable sda_pins[camera_num], disable sda_pins[camera_num ? 0 : 1]
     int scl_pins[2];    // enable scl_pins[camera_num], disable scl_pins[camera_num ? 0 : 1]
 
