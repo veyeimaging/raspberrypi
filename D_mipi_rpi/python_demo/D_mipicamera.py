@@ -254,7 +254,8 @@ class mipi_camera(object):
     def __init__(self):
         self.camera_instance = c_void_p(0)
     def init_camera(self, camera_interface=None):
-        cam_infe = CAMERA_INTERFACE(0,0,(0,0),(0,0));
+        #//0or1 for CM
+        cam_infe = CAMERA_INTERFACE(0,-1,(0,0),(0,0));
         if camera_interface is not None:
             try:
                 cam_infe.i2c_bus, cam_infe.camera_num, (cam_infe.sda_pins[0], cam_infe.sda_pins[1]), (cam_infe.scl_pins[0], cam_infe.scl_pins[1]) = camera_interface
