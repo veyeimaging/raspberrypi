@@ -105,12 +105,13 @@ echo "Raspberry Pi3B / Pi3B+ / 3A / 4B(1G/2G/4G)"
 # "Direct i2c1 to GPIO44&45."
 # Pins 44&45 Alt1=i2c0, alt2=i2c1
 # i2c1 can be on pins 2 and 3, so make sure they are not set to alt0
+# use i2c 0 
 gpio -g mode 2 in
 gpio -g mode 3 in
 gpio -g mode 44 in
-gpio -g mode 44 alt2
+gpio -g mode 44 alt1
 gpio -g mode 45 in
-gpio -g mode 45 alt2
+gpio -g mode 45 alt1
 #shutdown
 # you need this one: https://github.com/6by9/rpi3-gpiovirtbuf
 #gpio -g write 41 1
