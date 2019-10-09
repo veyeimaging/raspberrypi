@@ -5,7 +5,7 @@
 #set camera i2c pin mux
 #
 
-I2C_DEV=1;
+I2C_DEV=0;
 I2C_ADDR=0x3b;
 
 print_usage()
@@ -18,21 +18,7 @@ print_usage()
 	echo "    -p1 [param1] 			   param1 of each function"
 	echo "    -p2 [param1] 			   param2 of each function"
 	echo "    -b [i2c bus num] 		   i2c bus number"
-	echo -e "function list and param,ref to [veye_mipi_290_isp_function_and_param.pdf]"
-	echo "support functions: 
-    devid,
-    hdver,
-    wdrmode,
-    videoformat,
-    mirrormode,
-    denoise,
-    agc,
-    lowlight,
-    daynightmode,
-    ircutdir,
-    irtrigger,
-    mshutter
-    "
+	echo "support functions: devid,hdver,wdrmode,videoformat,mirrormode,denoise,agc,lowlight,daynightmode,ircutdir,irtrigger"
 }
 ######################parse arg###################################
 MODE=read;
@@ -267,28 +253,6 @@ write_lowlight()
 	printf "w lowlight is 0x%2x\n" $PARAM1;
 }
 
-read_mshutter()
-{
-	local mshutter=0;
-	local res=0;
-	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x10 0xDA );
-	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x11 0x66 );
-	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x13 0x01 );
-	res=$(./i2c_read $I2C_DEV $I2C_ADDR  0x14 );
-	mshutter=$?;
-	printf "r mshutter is 0x%2x\n" $mshutter;
-}
-write_mshutter()
-{
-	local mshutter=0;
-	local res=0;
-	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x10 0xDA );
-	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x11 0x66 );
-	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x12 $PARAM1);
-	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x13 0x00 );
-	printf "w mshutter is 0x%2x\n" $PARAM1;
-}
-
 read_daynightmode()
 {
 	local daynightmode=0;
@@ -377,9 +341,6 @@ if [ ${MODE} == "read" ] ; then
 		"irtrigger")
 			read_irtrigger;
 			;;
-		"mshutter")
-			read_mshutter;
-			;;
 	esac
 fi
 
@@ -420,10 +381,7 @@ if [ ${MODE} == "write" ] ; then
 		"irtrigger")
 			write_irtrigger;
 			;;
-		"mshutter")
-			write_mshutter;
-			;;
 	esac
 fi
 
-./i2c_write $I2C_DEV $I2C_ADDR  0x07 0xFF&> /dev/null;
+
