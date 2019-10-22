@@ -383,5 +383,5 @@ if [ ${MODE} == "write" ] ; then
 			;;
 	esac
 fi
-
+./i2c_write $I2C_DEV $I2C_ADDR  0x07 0xFF&> /dev/null;
 
