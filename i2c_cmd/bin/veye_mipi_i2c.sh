@@ -87,7 +87,7 @@ fi
 
 pinmux()
 {
-	sh ./camera_i2c_config &> /dev/null
+	sh ./camera_i2c_config >> /dev/null 2>&1
 }
 
 read_devid()
@@ -306,7 +306,7 @@ write_irtrigger()
 pinmux;
 ./i2c_write $I2C_DEV $I2C_ADDR  0x07 0xFE&> /dev/null;
 
-if [ ${MODE} == "read" ] ; then	
+if [ ${MODE} = "read" ] ; then
 	case $FUNCTION in
 		"devid"|"deviceid")
 			read_devid;
@@ -346,7 +346,7 @@ fi
 
 
 
-if [ ${MODE} == "write" ] ; then 	
+if [ ${MODE} = "write" ] ; then
 	case $FUNCTION in
 		"devid"|"deviceid")
 			echo "NOT SUPPORTED!";
@@ -383,5 +383,5 @@ if [ ${MODE} == "write" ] ; then
 			;;
 	esac
 fi
-./i2c_write $I2C_DEV $I2C_ADDR  0x07 0xFF&> /dev/null;
+
 
