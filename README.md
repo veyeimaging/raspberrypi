@@ -12,8 +12,7 @@ Video Control Toolkits is a shell script which provides ISP parameters configura
 Both is Open Source.
 
 # FAQ system
-ask.veye.cc
-
+[ask.veye.cc](http://ask.veye.cc)
 
 
 
