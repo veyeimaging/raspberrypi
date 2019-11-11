@@ -1,7 +1,7 @@
 # raspberrypi
 VEYE camera module software on RaspberryPi
 
-#wiki：
+# wiki：
 [VEYE-MIPI-290/327_for_Raspberry_Pi](http://wiki.veye.cc/index.php/VEYE-MIPI-290/327_for_Raspberry_Pi)
 
 
@@ -11,7 +11,7 @@ Video Stream Tookkits provides real-time display, capture, video recording, etc.
 Video Control Toolkits is a shell script which provides ISP parameters configuration capbility.
 Both is Open Source.
 
-#FAQ system
+# FAQ system
 ask.veye.cc
 
 
