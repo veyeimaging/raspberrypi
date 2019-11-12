@@ -154,10 +154,10 @@ write_videoformat()
 	local res=0;
 	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x10 0xDE );
 	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x11 0xC2 );
-	if [ $PARAM1 == "PAL" ] ; then
+	if [ $PARAM1 = "PAL" ] ; then
 		res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x12 0x0);
 	fi
-	if [ $PARAM1 == "NTSC" ] ; then
+	if [ $PARAM1 = "NTSC" ] ; then
 		res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x12 0x1);
 	fi
 	
