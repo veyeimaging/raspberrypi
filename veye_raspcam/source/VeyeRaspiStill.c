@@ -93,6 +93,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define MMAL_CAMERA_VIDEO_PORT 1
 #define MMAL_CAMERA_CAPTURE_PORT 2
 
+#define SPLITTER_PREVIEW_PORT 1
+#define SPLITTER_ENCODER_PORT 0
 
 // Stills format information
 // 0 implies variable
@@ -138,15 +140,15 @@ typedef struct
    int cameraNum;                      /// Camera number
    int burstCaptureMode;               /// Enable burst mode
    int onlyLuma;                       /// Only output the luma / Y plane of the YUV data
-MMAL_PARAM_THUMBNAIL_CONFIG_T thumbnailConfig;
-  // RASPIPREVIEW_PARAMETERS preview_parameters;    /// Preview setup parameters
+   MMAL_PARAM_THUMBNAIL_CONFIG_T thumbnailConfig;
+   RASPIPREVIEW_PARAMETERS preview_parameters;    /// Preview setup parameters
   // RASPICAM_CAMERA_PARAMETERS camera_parameters; /// Camera setup parameters
  VEYE_CAMERA_ISP_STATE	veye_camera_isp_state;
-  // MMAL_COMPONENT_T *camera_component;    /// Pointer to the camera component
+   MMAL_COMPONENT_T *splitter_component;    /// Pointer to the camera component
  //  MMAL_COMPONENT_T *null_sink_component;    /// Pointer to the camera component
- //  MMAL_CONNECTION_T *preview_connection; /// Pointer to the connection from camera to preview
+   MMAL_CONNECTION_T *preview_connection; /// Pointer to the connection from camera to preview
    MMAL_CONNECTION_T *isp_connection; /// Pointer to the connection from isp to camera
- //  MMAL_CONNECTION_T *encoder_connection; /// Pointer to the connection from camera to encoder
+    MMAL_CONNECTION_T *splitter_connection; /// Pointer to the connection from camera to encoder
     MMAL_COMPONENT_T *encoder_component;   /// Pointer to the encoder component
 
     MMAL_CONNECTION_T *encoder_connection; /// Pointer to the connection from camera to encoder
@@ -279,11 +281,11 @@ static void default_status(RASPISTILL_STATE *state)
    state->onlyLuma = 0;
    state->encoding = MMAL_ENCODING_JPEG;
    // Setup preview window defaults
-   //raspipreview_set_defaults(&state->preview_parameters);
+   raspipreview_set_defaults(&state->preview_parameters);
 
    // Set up the camera_parameters to default
   // raspicamcontrol_set_defaults(&state->camera_parameters);
-veye_camera_isp_set_defaults(&state->veye_camera_isp_state);
+  veye_camera_isp_set_defaults(&state->veye_camera_isp_state);
    // Set default camera
    state->cameraNum = -1;
 }
@@ -324,7 +326,7 @@ static void dump_status(RASPISTILL_STATE *state)
    }
    fprintf(stderr, "\n\n");
 
-   //raspipreview_dump_parameters(&state->preview_parameters);
+   raspipreview_dump_parameters(&state->preview_parameters);
    //raspicamcontrol_dump_parameters(&state->camera_parameters);
 }
 
@@ -543,7 +545,7 @@ static int parse_cmdline(int argc, const char **argv, RASPISTILL_STATE *state)
          // Try parsing for any image specific parameters
          // result indicates how many parameters were used up, 0,1,2
          // but we adjust by -1 as we have used one already
-    /*     const char *second_arg = (i + 1 < argc) ? argv[i + 1] : NULL;
+        const char *second_arg = (i + 1 < argc) ? argv[i + 1] : NULL;
 	  //xumm
          int parms_used = 0;// (raspicamcontrol_parse_cmdline(&state->camera_parameters, &argv[i][1], second_arg));
 
@@ -558,7 +560,7 @@ static int parse_cmdline(int argc, const char **argv, RASPISTILL_STATE *state)
          else
             i += parms_used - 1;
 
-         break;*/
+         break;
       }
       }
    }
@@ -588,7 +590,7 @@ static void display_valid_parameters( char *app_name)
    raspicli_display_help(cmdline_commands, cmdline_commands_size);
 
    // Help for preview options
-//   raspipreview_display_help();
+   raspipreview_display_help();
 
    // Now display any help information from the camcontrol code
 //   raspicamcontrol_display_help();
@@ -596,6 +598,164 @@ static void display_valid_parameters( char *app_name)
    fprintf(stdout, "\n");
 
    return;
+}
+
+/**
+ * Create the splitter component, set up its ports
+ *
+ * @param state Pointer to state control struct
+ *
+ * @return MMAL_SUCCESS if all OK, something else otherwise
+ *
+ */
+static MMAL_STATUS_T create_splitter_component(RASPISTILL_STATE *state)
+{
+   MMAL_COMPONENT_T *splitter = 0;
+   MMAL_PORT_T *splitter_output = NULL;
+   MMAL_ES_FORMAT_T *format;
+   MMAL_STATUS_T status;
+   MMAL_POOL_T *pool;
+   int i;
+
+   if (state->veye_camera_isp_state.isp_component == NULL)
+   {
+      status = MMAL_ENOSYS;
+      vcos_log_error("Camera component must be created before splitter");
+      goto error;
+   }
+
+   /* Create the component */
+   status = mmal_component_create(MMAL_COMPONENT_DEFAULT_VIDEO_SPLITTER, &splitter);
+
+   if (status != MMAL_SUCCESS)
+   {
+      vcos_log_error("Failed to create splitter component");
+      goto error;
+   }
+
+   if (!splitter->input_num)
+   {
+      status = MMAL_ENOSYS;
+      vcos_log_error("Splitter doesn't have any input port");
+      goto error;
+   }
+
+   vcos_log_error("Splitter has %d output port,you could use num 2,3 for extend", splitter->output_num);
+   
+   if (splitter->output_num < 2)
+   {
+      status = MMAL_ENOSYS;
+      vcos_log_error("Splitter doesn't have enough output ports");
+      goto error;
+   }
+
+   /* Ensure there are enough buffers to avoid dropping frames: */
+   mmal_format_copy(splitter->input[0]->format, state->veye_camera_isp_state.isp_component->output[MMAL_CAMERA_PREVIEW_PORT]->format);
+
+   if (splitter->input[0]->buffer_num < VIDEO_OUTPUT_BUFFERS_NUM)
+      splitter->input[0]->buffer_num = VIDEO_OUTPUT_BUFFERS_NUM;
+
+   status = mmal_port_format_commit(splitter->input[0]);
+
+   if (status != MMAL_SUCCESS)
+   {
+      vcos_log_error("Unable to set format on splitter input port");
+      goto error;
+   }
+
+   /* Splitter can do format conversions, configure format for its output port: */
+   for (i = 0; i < splitter->output_num; i++)
+   {
+      mmal_format_copy(splitter->output[i]->format, splitter->input[0]->format);
+#if 0
+      if (i == SPLITTER_OUT_PORT)
+      {
+         format = splitter->output[i]->format;
+
+         switch (state->raw_output_fmt)
+         {
+         case RAW_OUTPUT_FMT_YUV:
+         case RAW_OUTPUT_FMT_GRAY: /* Grayscale image contains only luma (Y) component */
+            format->encoding = MMAL_ENCODING_I420;
+            format->encoding_variant = MMAL_ENCODING_I420;
+            break;
+         case RAW_OUTPUT_FMT_RGB:
+            if (mmal_util_rgb_order_fixed(state->veye_camera_isp_state.isp_component->output[MMAL_CAMERA_PREVIEW_PORT]))
+               format->encoding = MMAL_ENCODING_RGB24;
+            else
+               format->encoding = MMAL_ENCODING_BGR24;
+            format->encoding_variant = 0;  /* Irrelevant when not in opaque mode */
+            break;
+         default:
+            status = MMAL_EINVAL;
+            vcos_log_error("unknown raw output format");
+            goto error;
+         }
+      }
+#endif
+      status = mmal_port_format_commit(splitter->output[i]);
+
+      if (status != MMAL_SUCCESS)
+      {
+         vcos_log_error("Unable to set format on splitter output port %d", i);
+         goto error;
+      }
+   }
+
+   /* Enable component */
+   status = mmal_component_enable(splitter);
+
+   if (status != MMAL_SUCCESS)
+   {
+      vcos_log_error("splitter component couldn't be enabled");
+      goto error;
+   }
+#if 0
+   /* Create pool of buffer headers for the output port to consume */
+   splitter_output = splitter->output[SPLITTER_OUTPUT_PORT];
+   pool = mmal_port_pool_create(splitter_output, splitter_output->buffer_num, splitter_output->buffer_size);
+
+   if (!pool)
+   {
+      vcos_log_error("Failed to create buffer header pool for splitter output port %s", splitter_output->name);
+   }
+
+   state->splitter_pool = pool;
+   #endif
+   state->splitter_component = splitter;
+
+   if (state->verbose)
+      fprintf(stderr, "Splitter component done\n");
+
+   return status;
+
+error:
+
+   if (splitter)
+      mmal_component_destroy(splitter);
+
+   return status;
+}
+
+/**
+ * Destroy the splitter component
+ *
+ * @param state Pointer to state control struct
+ *
+ */
+static void destroy_splitter_component(RASPISTILL_STATE *state)
+{
+   // Get rid of any port buffers first
+  /* if (state->splitter_pool)
+   {
+      mmal_port_pool_destroy(state->splitter_component->output[SPLITTER_OUTPUT_PORT], state->splitter_pool);
+   }*/
+
+   if (state->splitter_component)
+   {
+      mmal_component_destroy(state->splitter_component);
+      state->splitter_component = NULL;
+   }
 }
 
 /**
@@ -1189,9 +1349,13 @@ int main(int argc, const char **argv)
  //  MMAL_PORT_T *camera_still_port = NULL;
 //   MMAL_PORT_T *preview_input_port = NULL;
  //  MMAL_PORT_T *isp_output_port = NULL;
-    MMAL_PORT_T *preview_input_port = NULL;
-   	MMAL_PORT_T *encoder_input_port = NULL;
-   	MMAL_PORT_T *encoder_output_port = NULL;
+    	MMAL_PORT_T *preview_input_port = NULL;
+	MMAL_PORT_T *encoder_input_port = NULL;
+	MMAL_PORT_T *encoder_output_port = NULL;
+	
+	MMAL_PORT_T *splitter_input_port = NULL;
+       MMAL_PORT_T *splitter_preview_port = NULL;
+      MMAL_PORT_T *splitter_encode_port = NULL;
    
    MMAL_POOL_T *pool;
   
@@ -1245,11 +1409,26 @@ int main(int argc, const char **argv)
       vcos_log_error("%s: Failed to create camera component", __func__);
       exit_code = EX_SOFTWARE;
    }
+   else if ((status = raspipreview_create(&state.preview_parameters)) != MMAL_SUCCESS)
+   {
+      vcos_log_error("%s: Failed to create preview component", __func__);
+      destroy_veye_camera_isp_component(&state.veye_camera_isp_state);
+      exit_code = EX_SOFTWARE;
+   }
  else if ((status = create_encoder_component(&state)) != MMAL_SUCCESS)
    {
       vcos_log_error("%s: Failed to create encode component", __func__);
       destroy_veye_camera_isp_component(&state.veye_camera_isp_state);
       exit_code = EX_SOFTWARE;
+   }
+   else if ((status = create_splitter_component(&state))!= MMAL_SUCCESS)
+   {
+	   vcos_log_error("%s: Failed to create splitter component", __func__);
+	    raspipreview_destroy(&state.preview_parameters);
+	   destroy_encoder_component(&state);
+	   destroy_veye_camera_isp_component(&state.veye_camera_isp_state);
+	   
+	   exit_code = EX_SOFTWARE;
    }
    else
    {
@@ -1257,11 +1436,16 @@ int main(int argc, const char **argv)
    	if (state.verbose)
          fprintf(stderr, "Starting component connection stage\n");
 
-      camera_preview_port = state.veye_camera_isp_state.camera_component->output[MMAL_CAMERA_PREVIEW_PORT];
-      camera_video_port = state.veye_camera_isp_state.isp_component->output[0];
-      encoder_input_port  = state.encoder_component->input[0];
-      encoder_output_port = state.encoder_component->output[0];
+       camera_preview_port = state.veye_camera_isp_state.camera_component->output[MMAL_CAMERA_PREVIEW_PORT];
+       camera_video_port = state.veye_camera_isp_state.isp_component->output[0];
 
+	preview_input_port  = state.preview_parameters.preview_component->input[0];
+       encoder_input_port  = state.encoder_component->input[0];
+       encoder_output_port = state.encoder_component->output[0];
+
+	splitter_input_port = state.splitter_component->input[0];
+	splitter_preview_port = state.splitter_component->output[SPLITTER_PREVIEW_PORT];
+	splitter_encode_port = state.splitter_component->output[SPLITTER_ENCODER_PORT];
 
       {
          if (state.verbose)
@@ -1275,15 +1459,33 @@ int main(int argc, const char **argv)
 		goto error;
 	} 	
 
-         // Now connect the camera to the encoder
-         status = connect_ports(camera_video_port, encoder_input_port, &state.encoder_connection);
+	  // Now connect the camera to the splitter
+         status = connect_ports(camera_video_port, splitter_input_port, &state.splitter_connection);
 
          if (status != MMAL_SUCCESS)
          {
-            state.encoder_connection = NULL;
+            state.splitter_connection = NULL;
             vcos_log_error("%s: Failed to connect camera video port to encoder input", __func__);
             goto error;
          }
+	  status = connect_ports(splitter_preview_port, preview_input_port, &state.preview_connection);
+
+	  if (status != MMAL_SUCCESS)
+	  {
+		  state.preview_connection = NULL;
+		  vcos_log_error("%s: Failed to connect camera video port to encoder input", __func__);
+		  goto error;
+	  }
+	
+	  // Now connect the camera to the encoder
+	  status = connect_ports(splitter_encode_port, encoder_input_port, &state.encoder_connection);
+
+	  if (status != MMAL_SUCCESS)
+	  {
+		  state.encoder_connection = NULL;
+		  vcos_log_error("%s: Failed to connect camera video port to encoder input", __func__);
+		  goto error;
+	  }
       }
 	  
 
@@ -1400,7 +1602,7 @@ int main(int argc, const char **argv)
                if (state.verbose)
                   fprintf(stderr, "Starting capture %d\n", frame);
 
-               if (mmal_port_parameter_set_boolean(camera_video_port, MMAL_PARAMETER_CAPTURE, 1) != MMAL_SUCCESS)
+               if (mmal_port_parameter_set_boolean(splitter_encode_port, MMAL_PARAMETER_CAPTURE, 1) != MMAL_SUCCESS)
                {
                	// How to handle?
                   //vcos_log_error("%s: Failed to start capture", __func__);
@@ -1458,14 +1660,20 @@ error:
       if (output_file)
          fclose(output_file);
 
+
+
+    if (state.preview_parameters.wantPreview && state.preview_connection)
+         mmal_connection_destroy(state.preview_connection);
+      if (state.encoder_connection)
+         mmal_connection_destroy(state.encoder_connection);
+      if (state.splitter_connection)
+         mmal_connection_destroy(state.splitter_connection);
       // Disable all our ports that are not handled by connections
-       check_disable_port(encoder_output_port);
-	  
-     if (state.isp_connection)
-         mmal_connection_destroy(state.isp_connection);
-		 
-   //   if (state.preview_connection)
-  //       mmal_connection_destroy(state.preview_connection);
+     //   check_disable_port(camera_still_port);
+      check_disable_port(encoder_output_port);
+      check_disable_port(splitter_preview_port);
+      // Disable all our ports that are not handled by connections
+ 
 
       /* Disable components */
   //    if (state.preview_parameters.preview_component)
@@ -1485,8 +1693,8 @@ error:
       if (state.veye_camera_isp_state.camera_component)
          mmal_component_disable(state.veye_camera_isp_state.camera_component);
 
- //     raspipreview_destroy(&state.preview_parameters);
- //     destroy_splitter_component(&state);
+      raspipreview_destroy(&state.preview_parameters);
+      destroy_splitter_component(&state);
       destroy_encoder_component(&state);
       destroy_veye_camera_isp_component(&state.veye_camera_isp_state);
 	  
