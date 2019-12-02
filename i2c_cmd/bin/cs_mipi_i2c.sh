@@ -23,13 +23,14 @@ I2C_ADDR=0x3b;
 print_usage()
 {
     echo "this shell scripts should be used for CS-MIPI-IMX307 !"
-	echo "Usage:  ./cs_mipi_i2c.sh [-r/w] [-f] function name -p1 param1 -p2 param2 -b bus"
+	echo "Usage:  ./cs_mipi_i2c.sh [-r/w] [-f] function name -p1 param1 -p2 param2 -p3 param3 -b bus"
 	echo "options:"
 	echo "    -r                       read "
 	echo "    -w                       write"
 	echo "    -f [function name]       function name"
 	echo "    -p1 [param1] 			   param1 of each function"
 	echo "    -p2 [param1] 			   param2 of each function"
+	echo "    -p3 [param1] 			   param3 of each function"
 	echo "    -b [i2c bus num] 		   i2c bus number"
 }
 
