@@ -60,7 +60,7 @@ int main(int argc, char *argv[])
 	U32 device_addr;
 	U32 reg_addr;
 	U32 new_data;
-	U8 value[100];
+	U8 value[512];
 	U32 num = 1;
 	int result;
 	if (argc < 4)
