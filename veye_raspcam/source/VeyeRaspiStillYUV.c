@@ -173,7 +173,7 @@ static void display_valid_parameters( char *app_name);
 #define CommandSettings     13
 #define CommandBurstMode    14
 #define CommandOnlyLuma     15
-
+#define CommandMode        16
 //todo 
 static COMMAND_LIST cmdline_commands[] =
 {
@@ -193,6 +193,7 @@ static COMMAND_LIST cmdline_commands[] =
    { CommandSettings, "-settings",  "set","Retrieve camera settings and write to stdout", 0},
    { CommandBurstMode, "-burst",    "bm", "Enable 'burst capture mode'", 0},
    { CommandOnlyLuma,  "-luma",     "y",  "Only output the luma / Y of the YUV data'", 0},
+   { CommandMode,   "-mode",	"md", "Set sensor mode <mode>", 0 },
 };
 
 static int cmdline_commands_size = sizeof(cmdline_commands) / sizeof(cmdline_commands[0]);
@@ -242,13 +243,13 @@ static void default_status(RASPISTILLYUV_STATE *state)
    state->settings = 0;
    state->burstCaptureMode=0;
    state->onlyLuma = 0;
-
+   
    // Setup preview window defaults
    //raspipreview_set_defaults(&state->preview_parameters);
 
    // Set up the camera_parameters to default
   // raspicamcontrol_set_defaults(&state->camera_parameters);
-
+   veye_camera_isp_set_defaults(&state->veye_camera_isp_state);
    // Set default camera
    state->cameraNum = 1;
 }
@@ -413,8 +414,6 @@ static int parse_cmdline(int argc, const char **argv, RASPISTILLYUV_STATE *state
                state->frameNextMethod = FRAME_NEXT_TIMELAPSE;
             else
                state->frameNextMethod = FRAME_NEXT_IMMEDIATELY;
-
-
             i++;
          }
          break;
@@ -469,7 +468,12 @@ static int parse_cmdline(int argc, const char **argv, RASPISTILLYUV_STATE *state
          }
          state->onlyLuma = 1;
          break;
-
+	case CommandMode: // sensor_mode > 0
+         if (sscanf(argv[i + 1], "%u",  &state->veye_camera_isp_state.sensor_mode) != 1)
+		valid = 0;
+         else
+            i++;
+         break;
       default:
       {
          // Try parsing for any image specific parameters
@@ -593,8 +597,8 @@ static void camera_buffer_callback(MMAL_PORT_T *port, MMAL_BUFFER_HEADER_T *buff
 
       if (pData->pstate->onlyLuma)
          bytes_to_write = vcos_min(buffer->length, port->format->es->video.width * port->format->es->video.height);
-
-	//vcos_log_error("camera_buffer_callback data len is %d file handle is %x",bytes_to_write,pData->file_handle);
+	vcos_log_error("camera_buffer_callback video width  is %d video height  is %d",port->format->es->video.width , port->format->es->video.height);
+	vcos_log_error("camera_buffer_callback data len is %d file handle is %d",bytes_to_write,pData->file_handle);
 	
       if (bytes_to_write && pData->file_handle)
       {
@@ -755,7 +759,7 @@ static int wait_for_next_frame(RASPISTILLYUV_STATE *state, int *frame)
    // If timeout = 0 then always continue
    if (current_time >= complete_time && state->timeout != 0)
       keep_running = 0;
- printf("keep looping method %d \n",state->frameNextMethod);
+    printf("keep looping method %d \n",state->frameNextMethod);
    switch (state->frameNextMethod)
    {
    case FRAME_NEXT_SINGLE :
@@ -1000,7 +1004,8 @@ int main(int argc, const char **argv)
    // We have two components. Camera and Preview
    // Camera is different in stills/video, but preview
    // is the same so handed off to a separate module
-   fprintf(stderr, "before create camera com \n");
+   fprintf(stderr, "before create camera com sensor mode %d\n",state.veye_camera_isp_state.sensor_mode);
+
   if ((status = create_veye_camera_isp_component(&state.veye_camera_isp_state,state.cameraNum)) != MMAL_SUCCESS)
    {
       vcos_log_error("%s: Failed to create camera component", __func__);

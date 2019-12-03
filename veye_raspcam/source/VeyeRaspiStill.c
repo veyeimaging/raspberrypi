@@ -189,7 +189,7 @@ static void display_valid_parameters( char *app_name);
 #define CommandSettings     15
 #define CommandBurstMode    16
 #define CommandOnlyLuma     17
-
+#define CommandMode        18
 
 static COMMAND_LIST cmdline_commands[] =
 {
@@ -215,6 +215,7 @@ static COMMAND_LIST cmdline_commands[] =
    { CommandSettings, "-settings",  "set","Retrieve camera settings and write to stdout", 0},
    { CommandBurstMode, "-burst",    "bm", "Enable 'burst capture mode'", 0},
    { CommandOnlyLuma,  "-luma",     "y",  "Only output the luma / Y of the YUV data-- not supported now!'", 0},
+   { CommandMode,   "-mode",	"md", "Set sensor mode <mode>", 0 },
    
 };
 
@@ -286,6 +287,8 @@ static void default_status(RASPISTILL_STATE *state)
    // Set up the camera_parameters to default
   // raspicamcontrol_set_defaults(&state->camera_parameters);
   veye_camera_isp_set_defaults(&state->veye_camera_isp_state);
+   //special
+   state->veye_camera_isp_state.height_align = 16;
    // Set default camera
    state->cameraNum = -1;
 }
@@ -539,7 +542,12 @@ static int parse_cmdline(int argc, const char **argv, RASPISTILL_STATE *state)
          }
          state->onlyLuma = 1;
          break;
-
+	case CommandMode: // sensor_mode > 0
+         if (sscanf(argv[i + 1], "%u",  &state->veye_camera_isp_state.sensor_mode) != 1)
+		valid = 0;
+         else
+            i++;
+         break;
       default:
       {
          // Try parsing for any image specific parameters
@@ -1403,7 +1411,8 @@ int main(int argc, const char **argv)
    // We have three components. Camera, Preview and encoder.
    // Camera and encoder are different in stills/video, but preview
    // is the same so handed off to a separate module
-   fprintf(stderr, "before create camera com \n");
+   fprintf(stderr, "before create camera com sensor mode %d\n",state.veye_camera_isp_state.sensor_mode);
+   
   if ((status = create_veye_camera_isp_component(&state.veye_camera_isp_state,state.cameraNum)) != MMAL_SUCCESS)
    {
       vcos_log_error("%s: Failed to create camera component", __func__);

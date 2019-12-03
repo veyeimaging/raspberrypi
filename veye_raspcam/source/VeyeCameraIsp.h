@@ -10,7 +10,13 @@ typedef struct
    MMAL_COMPONENT_T *isp_component;    /// Pointer to the isp component
    
    //private
+   int height_align;//8 in default,for jpeg must align to 16
+   char*    sensor_name; //可以自行读取寄存器判断？预留
    
+   int      sensor_mode;//depending on sensors
+                        //0:1080p@30fps
+                        ///1: 720p@60fps
+                        ///2 vga 130fps
 } VEYE_CAMERA_ISP_STATE;
 
 

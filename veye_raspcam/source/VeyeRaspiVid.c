@@ -456,7 +456,8 @@ static void default_status(RASPIVID_STATE *state)
 
    // Setup preview window defaults
   raspipreview_set_defaults(&state->preview_parameters);
-
+  veye_camera_isp_set_defaults(&state->veye_camera_isp_state);
+  state->veye_camera_isp_state.height_align = 16;
    // Set up the camera_parameters to default
 //   raspicamcontrol_set_defaults(&state->camera_parameters);
 }
@@ -2581,8 +2582,8 @@ int main(int argc, const char **argv)
    {
 	   vcos_log_error("%s: Failed to create splitter component", __func__);
 	    raspipreview_destroy(&state.preview_parameters);
-	   destroy_encoder_component(&state);
-	   destroy_veye_camera_isp_component(&state.veye_camera_isp_state);
+	    destroy_encoder_component(&state);
+	    destroy_veye_camera_isp_component(&state.veye_camera_isp_state);
 	   
 	   exit_code = EX_SOFTWARE;
    }

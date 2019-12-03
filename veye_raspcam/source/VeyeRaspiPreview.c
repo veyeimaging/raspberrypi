@@ -171,6 +171,7 @@ static void display_valid_parameters( char *app_name);
 #define CommandSettings     13
 #define CommandBurstMode    14
 #define CommandOnlyLuma     15
+#define CommandMode        16
 
 static COMMAND_LIST cmdline_commands[] =
 {
@@ -182,7 +183,7 @@ static COMMAND_LIST cmdline_commands[] =
    { CommandTimeout, "-timeout",    "t",  "Time (in ms) before takes picture and shuts down.-1 means forever, If not specified set to 5s", 1 },
    { CommandTimelapse,"-timelapse", "tl", "Timelapse mode. Takes a picture every <t>ms", 1},
    { CommandUseRGB,  "-rgb",        "rgb","Save as RGB data rather than YUV", 0},
-   { CommandCamSelect,"-camselect", "cs", "Select camera <number>. Default 0", 1 },
+   { CommandCamSelect,"-camselect", "cs", "Select camera <number>. Default 0", 1 },  
    { CommandFullResPreview,"-fullpreview","fp", "Run the preview using the still capture resolution (may reduce preview fps)", 0},
    { CommandLink,    "-latest",     "l",  "Link latest complete image to filename <filename>", 1},
    { CommandKeypress,"-keypress",   "k",  "Wait between captures for a ENTER, X then ENTER to exit", 0},
@@ -190,6 +191,7 @@ static COMMAND_LIST cmdline_commands[] =
    { CommandSettings, "-settings",  "set","Retrieve camera settings and write to stdout", 0},
    { CommandBurstMode, "-burst",    "bm", "Enable 'burst capture mode'", 0},
    { CommandOnlyLuma,  "-luma",     "y",  "Only output the luma / Y of the YUV data'", 0},
+   { CommandMode,   "-mode",	"md", "Set sensor mode <mode>", 0 },
 };
 
 static int cmdline_commands_size = sizeof(cmdline_commands) / sizeof(cmdline_commands[0]);
@@ -342,8 +344,14 @@ static int parse_cmdline(int argc, const char **argv, RASPIPREVIEW_STATE *state)
          else
             i++;
          break;
+ 	case CommandMode: // sensor_mode > 0
+         if (sscanf(argv[i + 1], "%u",  &state->veye_camera_isp_state.sensor_mode) != 1)
+		valid = 0;
+         else
+            i++;
+         break;
 
-      case CommandHeight: // Height > 0
+      case CommandHeight: // 
          if (sscanf(argv[i + 1], "%u", &state->height) != 1)
             valid = 0;
          else
@@ -712,7 +720,7 @@ int main(int argc, const char **argv)
       exit(EX_USAGE);
    }
 
- 	fprintf(stderr, "before create camera com time out %d\n", state.timeout);
+   fprintf(stderr, "before create camera com time out %d\n", state.timeout);
    if (state.verbose)
    {
       fprintf(stderr, "\n%s Camera App %s\n\n", basename((char*)argv[0]), VERSION_STRING);

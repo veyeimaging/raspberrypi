@@ -291,7 +291,7 @@ static void default_status(RASPIVIDYUV_STATE *state)
 
    // Setup preview window defaults
 //   raspipreview_set_defaults(&state->preview_parameters);
-
+ veye_camera_isp_set_defaults(&state->veye_camera_isp_state);
    // Set up the camera_parameters to default
 //   raspicamcontrol_set_defaults(&state->camera_parameters);
 }
