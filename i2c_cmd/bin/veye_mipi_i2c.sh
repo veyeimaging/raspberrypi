@@ -94,7 +94,7 @@ read_devid()
 {
 	local verid=0;
 	local res=0;
-	res=$(./i2c_read $I2C_DEV $I2C_ADDR  0x00 );
+	res=$(./i2c_read $I2C_DEV $I2C_ADDR  0x01 );
 	verid=$?;
 	printf "device id is 0x%2x\n" $verid;
 }
@@ -103,7 +103,7 @@ read_hardver()
 {
 	local hardver=0;
 	local res=0;
-	res=$(./i2c_read $I2C_DEV $I2C_ADDR  0x01 );
+	res=$(./i2c_read $I2C_DEV $I2C_ADDR  0x00 );
 	hardver=$?;
 	printf "hardware version is 0x%2x\n" $hardver;
 }
