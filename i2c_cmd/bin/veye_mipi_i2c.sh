@@ -19,6 +19,7 @@ print_usage()
 	echo "    -p2 [param1] 			   param2 of each function"
 	echo "    -b [i2c bus num] 		   i2c bus number"
 	echo "support functions: devid,hdver,wdrmode,videoformat,mirrormode,denoise,agc,lowlight,daynightmode,ircutdir,irtrigger£¬mshutter"
+    echo "cameramode, notf, capture, csienable "
 }
 ######################parse arg###################################
 MODE=read;
@@ -176,6 +177,7 @@ read_mirrormode()
 	mirrormode=$?;
 	printf "r mirrormode is 0x%2x\n" $mirrormode;
 }
+
 write_mirrormode()
 {
 	local mirrormode=0;
@@ -322,6 +324,64 @@ write_irtrigger()
 	printf "w irtrigger is 0x%2x\n" $PARAM1;
 }
 
+read_cameramode()
+{
+	local cameramode=0;
+	local res=0;
+	res=$(./i2c_read $I2C_DEV $I2C_ADDR  0x1A );
+	cameramode=$?;
+	printf "r cameramode is 0x%2x\n" $cameramode;
+}
+write_cameramode()
+{
+	local cameramode=0;
+	local res=0;
+	res=$(./i2c_write $I2C_DEV $I2C_ADDR 0x1A $PARAM1);
+	printf "w cameramode is 0x%2x\n" $PARAM1;
+}
+
+read_nodf()
+{
+	local nodf=0;
+	local res=0;
+	res=$(./i2c_read $I2C_DEV $I2C_ADDR  0x1B );
+	nodf=$?;
+	printf "r nodf is 0x%2x\n" $notf;
+}
+
+write_nodf()
+{
+	local nodf=0;
+	local res=0;
+	res=$(./i2c_write $I2C_DEV $I2C_ADDR 0x1B $PARAM1);
+	printf "w nodf is 0x%2x\n" $PARAM1;
+}
+
+write_capture()
+{
+	local capture=0;
+	local res=0;
+	res=$(./i2c_write $I2C_DEV $I2C_ADDR 0x1C 0x1);
+	printf "w capture\n" ;
+}
+
+read_csienable()
+{
+	local csienable=0;
+	local res=0;
+	res=$(./i2c_read $I2C_DEV $I2C_ADDR  0x1D );
+	csienable=$?;
+	printf "r csienable is 0x%2x\n" $csienable;
+}
+
+write_csienable()
+{
+	local csienable=0;
+	local res=0;
+	res=$(./i2c_write $I2C_DEV $I2C_ADDR 0x1D $PARAM1);
+	printf "w csienable is 0x%2x\n" $PARAM1;
+}
+
 
 #######################Action# BEGIN##############################
 
@@ -366,6 +426,15 @@ if [ ${MODE} = "read" ] ; then
 		"mshutter")
 			read_mshutter;
 			;;
+        "cameramode")
+			read_cameramode;
+			;;
+        "nodf")
+			read_nodf;
+			;;
+        "csienable")
+			read_csienable;
+			;;
 	esac
 fi
 
@@ -408,6 +477,18 @@ if [ ${MODE} = "write" ] ; then
 			;;
 		"mshutter")
 			write_mshutter;
+			;;
+        "cameramode")
+			write_cameramode;
+			;;
+        "nodf")
+			write_nodf;
+			;;
+        "capture")
+			write_capture;
+			;;
+        "csienable")
+			write_csienable;
 			;;
 	esac
 fi
