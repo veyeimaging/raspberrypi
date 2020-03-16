@@ -19,7 +19,7 @@ print_usage()
 	echo "    -p2 [param1] 			   param2 of each function"
 	echo "    -b [i2c bus num] 		   i2c bus number"
 	echo "support functions: devid,hdver,wdrmode,videoformat,mirrormode,denoise,agc,lowlight,daynightmode,ircutdir,irtrigger£¬mshutter"
-    echo "cameramode, notf, capture, csienable "
+    echo "cameramode, notf, capture, csienable,saturation,wdrbtargetbr "
 }
 ######################parse arg###################################
 MODE=read;
@@ -383,6 +383,53 @@ write_csienable()
 }
 
 
+read_saturation()
+{
+	local saturation=0;
+	local res=0;
+    res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x10 0xD8 );
+	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x11 0x7A );
+	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x13 0x01 );
+	res=$(./i2c_read $I2C_DEV $I2C_ADDR  0x14 );
+	saturation=$?;
+	printf "r saturation is 0x%2x\n" $saturation;
+}
+write_saturation()
+{
+	local saturation=0;
+	local res=0;
+	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x10 0xD8 );
+	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x11 0x7A );
+	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x12 $PARAM1);
+	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x13 0x00 );
+	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x10 0xD8 );
+	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x11 0x7B );
+	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x12 $PARAM1);
+	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x13 0x00 );
+	printf "w saturation is 0x%2x\n" $PARAM1;
+}
+
+read_wdrbtargetbr()
+{
+	local wdrbtargetbr=0;
+	local res=0;
+    res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x10 0xDA );
+	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x11 0xCA );
+	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x13 0x01 );
+	res=$(./i2c_read $I2C_DEV $I2C_ADDR  0x14 );
+	wdrbtargetbr=$?;
+	printf "r wdrbtargetbr is 0x%2x\n" $wdrbtargetbr;
+}
+write_wdrbtargetbr()
+{
+	local wdrbtargetbr=0;
+	local res=0;
+	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x10 0xDA );
+	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x11 0xCA );
+	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x12 $PARAM1);
+	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x13 0x00 );
+	printf "w wdrbtargetbr is 0x%2x\n" $PARAM1;
+}
 #######################Action# BEGIN##############################
 
 pinmux;
@@ -434,6 +481,12 @@ if [ ${MODE} = "read" ] ; then
 			;;
         "csienable")
 			read_csienable;
+			;;
+	"saturation")
+			read_saturation;
+			;;
+        "wdrbtargetbr")
+			read_wdrbtargetbr;
 			;;
 	esac
 fi
@@ -489,6 +542,12 @@ if [ ${MODE} = "write" ] ; then
 			;;
         "csienable")
 			write_csienable;
+			;;
+	"saturation")
+			write_saturation;
+			;;
+        "wdrbtargetbr")
+			write_wdrbtargetbr;
 			;;
 	esac
 fi
