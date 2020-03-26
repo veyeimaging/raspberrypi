@@ -13,7 +13,11 @@
 
 ./cs_mipi_i2c.sh -w -f videofmt -p1 1280 -p2 720 -p3 60
 ./cs_mipi_i2c.sh -w -f powerhz -p1 50
+./cs_mipi_i2c.sh -w -f i2caddr -p1 newaddr
 ./cs_mipi_i2c.sh -w -f sysreset
+
+./cs_mipi_i2c.sh -r -f sysreset
+
 ./cs_mipi_i2c.sh -w -f paramsave
 
 COMMENT_SAMPLE
@@ -22,7 +26,7 @@ I2C_ADDR=0x3b;
 
 print_usage()
 {
-    echo "this shell scripts should be used for CS-MIPI-IMX307 !"
+    echo "this shell scripts should be used for CS-MIPI-IMX307!"
 	echo "Usage:  ./cs_mipi_i2c.sh [-r/w] [-f] function name -p1 param1 -p2 param2 -p3 param3 -b bus"
 	echo "options:"
 	echo "    -r                       read "
@@ -32,6 +36,8 @@ print_usage()
 	echo "    -p2 [param1] 			   param2 of each function"
 	echo "    -p3 [param1] 			   param3 of each function"
 	echo "    -b [i2c bus num] 		   i2c bus number"
+    echo "    -d [i2c addr] 		   i2c addr if not default 0x3b"
+    echo "support functions: devid,firmwarever,productmodel,videofmtcap,videofmt,ispcap,i2caddr,powerhz,sysreset,paramsave"
 }
 
 ######################reglist###################################
@@ -39,6 +45,7 @@ print_usage()
 deviceID=0x00;
 HardWare=0x01;
 Csi2_Enable=0x03;
+I2c_addr=0x06;
 TriggerMode=0x10;
 SlaveMode=0x11;
 
@@ -83,7 +90,7 @@ b_arg_param2=0;
 b_arg_param3=0;
 b_arg_functin=0;
 b_arg_bus=0;
-
+b_arg_addr=0;
 
 for arg in $@
 do
@@ -112,6 +119,10 @@ do
 		b_arg_bus=0;
 		I2C_DEV=$arg;
 	fi
+    if [ $b_arg_addr -eq 1 ] ; then
+		b_arg_addr=0;
+		I2C_ADDR=$arg;
+	fi
 	case $arg in
 		"-r")
 			MODE=read;
@@ -134,6 +145,9 @@ do
 		"-b")
 			b_arg_bus=1;
 			;;
+        "-d")
+			b_arg_addr=1;
+			;;
 		"-h")
 			print_usage;
 			;;
@@ -152,16 +166,21 @@ pinmux()
 	sh ./camera_i2c_config >> /dev/null 2>&1
 }
 
-read_hardwareid()
+read_devid()
 {
-	local verid=0;
-    local hardver=0;
+	local devid=0;
+    
 	local res=0;
 	res=$(./i2c_read $I2C_DEV $I2C_ADDR  $deviceID );
-	verid=$?;
+	devid=$?;
+	printf "hardwareid is 0x%2x \n" $devid;
+}
+read_hdver()
+{
+    local hardver=0;
     res=$(./i2c_read $I2C_DEV $I2C_ADDR  $HardWare );
 	hardver=$?;
-	printf "hardwareid is 0x%2x%2x \n" $verid $hardver;
+    printf "hardware logic version is 0x%2x \n" $hardver;
 }
 
 read_firmware_ver()
@@ -352,7 +371,23 @@ write_sysreset()
     printf "w sysreset,all param will reset\n";
 }
 
+read_i2caddr()
+{
+	local i2caddr=0;
+	local res=0;
+	res=$(./i2c_read $I2C_DEV $I2C_ADDR  $I2c_addr );
+	i2caddr=$?;
+    printf "r i2caddr  0x%2x\n" $i2caddr;
+}
 
+write_i2caddr()
+{
+	local res=0;
+	res=$(./i2c_write $I2C_DEV $I2C_ADDR  $I2c_addr $PARAM1 );
+    printf "w i2caddr  0x%2x and save\n" $PARAM1;
+    I2C_ADDR=$PARAM1
+    write_paramsave;
+}
 #######################Action# BEGIN##############################
 
 pinmux;
@@ -360,7 +395,10 @@ pinmux;
 if [ ${MODE} = "read" ] ; then
 	case $FUNCTION in
 		"devid"|"deviceid")
-			read_hardwareid;
+			read_devid;
+			;;
+        "hdver")
+			read_hdver;
 			;;
 		"firmwarever")
 			read_firmware_ver;
@@ -379,6 +417,9 @@ if [ ${MODE} = "read" ] ; then
 			;;
 		"powerhz")
 			read_powerhz;
+			;;
+        "i2caddr")
+			read_i2caddr;
 			;;
         *)
 			echo "NOT SUPPORTED!";
@@ -399,6 +440,9 @@ if [ ${MODE} = "write" ] ; then
 			;;
 		"powerhz")
 			write_powerhz;
+			;;
+        "i2caddr")
+			write_i2caddr;
 			;;
         *)
 			echo "NOT SUPPORTED!";
