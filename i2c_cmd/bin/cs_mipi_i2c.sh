@@ -37,7 +37,7 @@ print_usage()
 	echo "    -p3 [param1] 			   param3 of each function"
 	echo "    -b [i2c bus num] 		   i2c bus number"
     echo "    -d [i2c addr] 		   i2c addr if not default 0x3b"
-    echo "support functions: devid,firmwarever,productmodel,videofmtcap,videofmt,ispcap,i2caddr,powerhz,sysreset,paramsave"
+    echo "support functions: devid,hdver,firmwarever,productmodel,videofmtcap,videofmt,ispcap,i2caddr,streammode,powerhz,sysreset,paramsave"
 }
 
 ######################reglist###################################
@@ -46,9 +46,19 @@ deviceID=0x00;
 HardWare=0x01;
 Csi2_Enable=0x03;
 I2c_addr=0x06;
-TriggerMode=0x10;
-SlaveMode=0x11;
 
+StreamMode=0x0E;
+SlaveMode=0x0F;
+
+StrobeIO_MODE=0x10;
+StrobeO_sel=0x11;
+StrobeO_value=0x12;
+StrobeI_value=0x13;
+
+TriggerIO_MODE=0x14;
+TriggerO_sel=0x15;
+TriggerO_value=0x16;
+TriggerI_value=0x17;
 
 ########################this is isp mcu reglist#####################
 ARM_VER_L=0x0100;
@@ -388,6 +398,56 @@ write_i2caddr()
     I2C_ADDR=$PARAM1
     write_paramsave;
 }
+
+read_streammode()
+{
+	local streammode=0;
+    local slavemode=0;
+	local res=0;
+	res=$(./i2c_read $I2C_DEV $I2C_ADDR  $StreamMode );
+	streammode=$?;
+    res=$(./i2c_read $I2C_DEV $I2C_ADDR  $SlaveMode );
+	slavemode=$?;
+    
+    printf "r streammode 0x%2x slave mode is %d\n" $i2caddr $slavemode;
+}
+
+write_sync_slavemode()
+{
+    local res=0;
+	res=$(./i2c_write $I2C_DEV $I2C_ADDR  $SlaveMode 0x1 );
+    res=$(./i2c_write $I2C_DEV $I2C_ADDR  $StrobeIO_MODE 0x0 );
+    res=$(./i2c_write $I2C_DEV $I2C_ADDR  $StrobeO_sel 0x1 );
+    res=$(./i2c_write $I2C_DEV $I2C_ADDR  $TriggerIO_MODE 0x0 );
+    res=$(./i2c_write $I2C_DEV $I2C_ADDR  $TriggerO_sel 0x2 );
+    printf "w stream mode slave \n";
+}
+
+write_sync_mastermode()
+{
+    local res=0;
+	res=$(./i2c_write $I2C_DEV $I2C_ADDR  $SlaveMode 0x0 );
+    res=$(./i2c_write $I2C_DEV $I2C_ADDR  $StrobeIO_MODE 0x1 );
+    res=$(./i2c_write $I2C_DEV $I2C_ADDR  $StrobeO_sel 0x1 );
+    res=$(./i2c_write $I2C_DEV $I2C_ADDR  $TriggerIO_MODE 0x1 );
+    res=$(./i2c_write $I2C_DEV $I2C_ADDR  $TriggerO_sel 0x2 );
+    printf "w stream mode master \n";
+}
+
+write_streammode()
+{
+	local res=0;
+	res=$(./i2c_write $I2C_DEV $I2C_ADDR  $StreamMode $PARAM1 );
+    if [ $PARAM1 -eq 1 ] ; then
+        if [ $PARAM2 -eq 1 ] ; then
+            write_sync_slavemode;
+        else
+            write_sync_mastermode;
+        fi
+    fi
+    printf "w i2caddr 0x%2x slave mode 0x%2x and save param\n" $PARAM1 $PARAM2;
+    write_paramsave;
+}
 #######################Action# BEGIN##############################
 
 pinmux;
@@ -421,6 +481,9 @@ if [ ${MODE} = "read" ] ; then
         "i2caddr")
 			read_i2caddr;
 			;;
+        "streammode")
+            read_streammode;
+			;;
         *)
 			echo "NOT SUPPORTED!";
 			;;
@@ -443,6 +506,9 @@ if [ ${MODE} = "write" ] ; then
 			;;
         "i2caddr")
 			write_i2caddr;
+			;;
+        "streammode")
+            write_streammode;
 			;;
         *)
 			echo "NOT SUPPORTED!";
