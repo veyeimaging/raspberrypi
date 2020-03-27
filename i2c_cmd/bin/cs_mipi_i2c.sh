@@ -37,7 +37,7 @@ print_usage()
 	echo "    -p3 [param1] 			   param3 of each function"
 	echo "    -b [i2c bus num] 		   i2c bus number"
     echo "    -d [i2c addr] 		   i2c addr if not default 0x3b"
-    echo "support functions: devid,hdver,firmwarever,productmodel,videofmtcap,videofmt,ispcap,i2caddr,streammode,powerhz,sysreset,paramsave"
+    echo "support functions: devid,hdver,camcap,firmwarever,productmodel,videofmtcap,videofmt,ispcap,i2caddr,streammode,powerhz,sysreset,paramsave"
 }
 
 ######################reglist###################################
@@ -45,6 +45,8 @@ print_usage()
 deviceID=0x00;
 HardWare=0x01;
 Csi2_Enable=0x03;
+CAM_CAP_L=0X04;
+CAM_CAP_H=0X05;
 I2c_addr=0x06;
 
 StreamMode=0x0E;
@@ -205,6 +207,17 @@ read_firmware_ver()
     printf "r firmware version is %2d.%02d\n" $firmwarever_h $firmwarever_l;
 }
 
+read_camcap()
+{
+    local camcap_l=0;
+    local camcap_h=0;
+	local res=0;
+	res=$(./i2c_read $I2C_DEV $I2C_ADDR  $CAM_CAP_L );
+	camcap_l=$?;
+    res=$(./i2c_read $I2C_DEV $I2C_ADDR  $CAM_CAP_H );
+	camcap_h=$?;
+    printf "r camera capbility 0x%02x%02x\n" $camcap_h $camcap_l;
+}
 read_productmodel()
 {
 	local productmodel_l=0;
@@ -459,6 +472,9 @@ if [ ${MODE} = "read" ] ; then
 			;;
         "hdver")
 			read_hdver;
+			;;
+        "camcap")
+			read_camcap;
 			;;
 		"firmwarever")
 			read_firmware_ver;
