@@ -91,14 +91,12 @@ StreamMode=0x0E;
 SlaveMode=0x0F;
 
 StrobeIO_MODE=0x10;
-StrobeO_sel=0x11;
-StrobeO_value=0x12;
-StrobeI_value=0x13;
+Strobe_sel=0x11;
+Strobe_value=0x12;
 
 TriggerIO_MODE=0x14;
-TriggerO_sel=0x15;
-TriggerO_value=0x16;
-TriggerI_value=0x17;
+Trigger_sel=0x15;
+Trigger_value=0x16;
 
 ########################this is isp mcu reglist#####################
 ARM_VER_L=0x0100;
@@ -519,9 +517,9 @@ write_sync_slavemode()
     local res=0;
 	res=$(./i2c_write $I2C_DEV $I2C_ADDR  $SlaveMode 0x1 );
     res=$(./i2c_write $I2C_DEV $I2C_ADDR  $StrobeIO_MODE 0x0 );
-    res=$(./i2c_write $I2C_DEV $I2C_ADDR  $StrobeO_sel 0x1 );
+    res=$(./i2c_write $I2C_DEV $I2C_ADDR  $Strobe_sel 0x1 );
     res=$(./i2c_write $I2C_DEV $I2C_ADDR  $TriggerIO_MODE 0x0 );
-    res=$(./i2c_write $I2C_DEV $I2C_ADDR  $TriggerO_sel 0x2 );
+    res=$(./i2c_write $I2C_DEV $I2C_ADDR  $Trigger_sel 0x2 );
     printf "w stream mode slave \n";
 }
 
@@ -530,9 +528,9 @@ write_sync_mastermode()
     local res=0;
 	res=$(./i2c_write $I2C_DEV $I2C_ADDR  $SlaveMode 0x0 );
     res=$(./i2c_write $I2C_DEV $I2C_ADDR  $StrobeIO_MODE 0x1 );
-    res=$(./i2c_write $I2C_DEV $I2C_ADDR  $StrobeO_sel 0x1 );
+    res=$(./i2c_write $I2C_DEV $I2C_ADDR  $Strobe_sel 0x1 );
     res=$(./i2c_write $I2C_DEV $I2C_ADDR  $TriggerIO_MODE 0x1 );
-    res=$(./i2c_write $I2C_DEV $I2C_ADDR  $TriggerO_sel 0x2 );
+    res=$(./i2c_write $I2C_DEV $I2C_ADDR  $Trigger_sel 0x2 );
     printf "w stream mode master \n";
 }
 
@@ -547,7 +545,7 @@ write_streammode()
             write_sync_mastermode;
         fi
     fi
-    printf "w i2caddr 0x%2x slave mode 0x%2x and save param\n" $PARAM1 $PARAM2;
+    printf "w streammode 0x%2x slave mode 0x%2x and save param\n" $PARAM1 $PARAM2;
     write_paramsave;
 }
 
