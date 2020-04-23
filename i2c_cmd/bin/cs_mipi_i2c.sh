@@ -75,7 +75,7 @@ print_usage()
 	echo "    -b [i2c bus num] 		   i2c bus number"
     echo "    -d [i2c addr] 		   i2c addr if not default 0x3b"
     echo "support functions: devid,hdver,camcap,firmwarever,productmodel,videofmtcap,videofmt,ispcap,i2caddr,streammode,powerhz,
-     daynightmode ,hue ,contrast , satu , expostate , wbstate ,aemode , metime ,meagain , medgain , awbmode , mwbcolortemp , mwbgain sysreset,paramsave"
+     daynightmode ,hue ,contrast , satu , expostate , wbstate ,aemode , aetarget, aetime,aeagc,metime ,meagain , medgain , awbmode , mwbcolortemp , mwbgain,imagedir sysreset,paramsave"
 }
 
 ######################reglist###################################
@@ -120,6 +120,7 @@ FMT_HEIGHT_L=0x0182;
 FMT_HEIGHT_H=0x0183;
 FMT_FRAMRAT_L=0x0184;
 FMT_FRAMRAT_H=0x0185;
+IMAGE_DIR=0x0186;
 
 ISP_CAP_L=0x0200;
 ISP_CAP_M=0x0201;
@@ -717,7 +718,7 @@ write_metime()
     data_e=$((exptime>>24&0xFF));
     data_h=$((exptime>>16&0xFF));
     data_m=$((exptime>>8&0xFF));
-    data_l=$((width&0xFF));
+    data_l=$((exptime&0xFF));
     res=$(./i2c_write $I2C_DEV $I2C_ADDR  $ME_TIME_L $data_l);
     res=$(./i2c_write $I2C_DEV $I2C_ADDR  $ME_TIME_M $data_m);
     res=$(./i2c_write $I2C_DEV $I2C_ADDR  $ME_TIME_H $data_h);
@@ -729,8 +730,6 @@ read_meagain()
 {
     local again_dec=0;
     local again_int=0;
-    again_int=$PARAM1;
-    again_dec=$PARAM2;
     res=$(./i2c_read $I2C_DEV $I2C_ADDR  $ME_AGAIN_DEC);
 	again_dec=$?;
     res=$(./i2c_read $I2C_DEV $I2C_ADDR  $ME_AGAIN_INTER);
@@ -753,8 +752,6 @@ read_medgain()
 {
     local dgain_dec=0;
     local dgain_int=0;
-    dgain_int=$PARAM1;
-    dgain_dec=$PARAM2;
     res=$(./i2c_read $I2C_DEV $I2C_ADDR  $ME_DGAIN_DEC);
 	dgain_dec=$?;
     res=$(./i2c_read $I2C_DEV $I2C_ADDR  $ME_DGAIN_INTER);
@@ -838,8 +835,99 @@ write_mwbgain()
     res=$(./i2c_write $I2C_DEV $I2C_ADDR  $MWB_BGAIN $bgain);
     printf "b rgain %02x, bgain %02x\n" $rgain $bgain;
 }
+read_imagedir()
+{
+    local imagedir=0;
+	local res=0;
+	res=$(./i2c_read $I2C_DEV $I2C_ADDR $IMAGE_DIR);
+	imagedir=$?;
+    printf "r imagedir 0x%2x\n" $imagedir;
+}
 
+write_imagedir()
+{
+    local res=0;
+	res=$(./i2c_write $I2C_DEV $I2C_ADDR  $IMAGE_DIR $PARAM1 );
+    printf "w imagedir 0x%2x \n" $PARAM1;
+}
 
+read_aetarget()
+{
+    local aetarget=0;
+	local res=0;
+	res=$(./i2c_read $I2C_DEV $I2C_ADDR $AE_TARGET);
+	aetarget=$?;
+    printf "r aetarget 0x%2x\n" $aetarget;
+}
+write_aetarget()
+{
+    local res=0;
+	res=$(./i2c_write $I2C_DEV $I2C_ADDR  $AE_TARGET $PARAM1 );
+    printf "w aetarget 0x%2x \n" $PARAM1;
+}
+
+read_aetime()
+{
+    local exptime=0;
+    local data_l=0;
+    local data_m=0;
+    local data_h=0;
+    local data_e=0;
+    local res=0;
+    res=$(./i2c_read $I2C_DEV $I2C_ADDR  $AE_MAXTIME_L);
+	data_l=$?;
+    res=$(./i2c_read $I2C_DEV $I2C_ADDR  $AE_MAXTIME_M);
+	data_m=$?;
+    res=$(./i2c_read $I2C_DEV $I2C_ADDR  $AE_MAXTIME_H);
+	data_h=$?;
+    res=$(./i2c_read $I2C_DEV $I2C_ADDR  $AE_MAXTIME_E);
+	data_e=$?;
+    exptime=$((data_e*256*256*256+data_h*256*256+data_m*256+data_l));
+    if [ $exptime -eq  $((16#FFFFFFFF)) ] ; then
+		printf "r auto exptime 0xFFFFFFFF, auto adjust mode\n";
+	else
+        printf "r auto exptime %d us\n" $exptime;
+    fi
+}
+write_aetime()
+{
+    local exptime=0;
+    local data_l=0;
+    local data_m=0;
+    local data_h=0;
+    local data_e=0;
+    exptime=$PARAM1;
+    data_e=$((exptime>>24&0xFF));
+    data_h=$((exptime>>16&0xFF));
+    data_m=$((exptime>>8&0xFF));
+    data_l=$((exptime&0xFF));
+    res=$(./i2c_write $I2C_DEV $I2C_ADDR  $AE_MAXTIME_L $data_l);
+    res=$(./i2c_write $I2C_DEV $I2C_ADDR  $AE_MAXTIME_M $data_m);
+    res=$(./i2c_write $I2C_DEV $I2C_ADDR  $AE_MAXTIME_H $data_h);
+    res=$(./i2c_write $I2C_DEV $I2C_ADDR  $AE_MAXTIME_E $data_e);
+    printf "w auto exptime %d us\n" $exptime;
+}
+
+read_aeagc()
+{
+    local agc_dec=0;
+    local agc_int=0;
+    res=$(./i2c_read $I2C_DEV $I2C_ADDR  $AE_MAXGAIN_DEC);
+	agc_dec=$?;
+    res=$(./i2c_read $I2C_DEV $I2C_ADDR  $AE_MAXGAIN_INTER);
+	agc_int=$?;
+	printf "r ae agc max %d.%d dB\n" $agc_int $agc_dec;
+}
+write_aeagc()
+{
+    local agc_dec=0;
+    local agc_int=0;
+    agc_int=$PARAM1;
+    agc_dec=$PARAM2;
+    res=$(./i2c_write $I2C_DEV $I2C_ADDR $AE_MAXGAIN_DEC $agc_dec);
+    res=$(./i2c_write $I2C_DEV $I2C_ADDR $AE_MAXGAIN_INTER $agc_int);
+	printf "w ae agc max %d.%d dB\n" $agc_int $agc_dec;
+}
 #######################Action# BEGIN##############################
 
 pinmux;
@@ -918,6 +1006,18 @@ if [ ${MODE} = "read" ] ; then
         "mwbgain")
             read_mwbgain;
 			;;
+        "imagedir")
+            read_imagedir;
+			;;
+        "aetarget")
+            read_aetarget;
+			;;
+        "aetime")
+            read_aetime;
+			;;
+        "aeagc")
+            read_aeagc;
+			;;
         *)
 			echo "NOT SUPPORTED!";
 			;;
@@ -976,6 +1076,18 @@ if [ ${MODE} = "write" ] ; then
 			;;
         "mwbgain")
             write_mwbgain;
+			;;
+        "imagedir")
+            write_imagedir;
+			;;
+        "aetarget")
+            write_aetarget;
+			;;
+        "aetime")
+            write_aetime;
+			;;
+        "aeagc")
+            write_aeagc;
 			;;
         *)
 			echo "NOT SUPPORTED!";
