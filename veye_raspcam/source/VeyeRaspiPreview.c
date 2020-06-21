@@ -343,6 +343,7 @@ static int parse_cmdline(int argc, const char **argv, RASPIPREVIEW_STATE *state)
             valid = 0;
          else
             i++;
+	 state->veye_camera_isp_state.width = state->width;
          break;
  	case CommandMode: // sensor_mode > 0
          if (sscanf(argv[i + 1], "%u",  &state->veye_camera_isp_state.sensor_mode) != 1)
@@ -356,6 +357,7 @@ static int parse_cmdline(int argc, const char **argv, RASPIPREVIEW_STATE *state)
             valid = 0;
          else
             i++;
+	  state->veye_camera_isp_state.height = state->height;
          break;
 
       case CommandOutput:  // output filename

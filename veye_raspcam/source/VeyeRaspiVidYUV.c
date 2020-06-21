@@ -393,6 +393,7 @@ static int parse_cmdline(int argc, const char **argv, RASPIVIDYUV_STATE *state)
             valid = 0;
          else
             i++;
+	  state->veye_camera_isp_state.width = state->width;
          break;
 
       case CommandHeight: // Height > 0
@@ -400,6 +401,7 @@ static int parse_cmdline(int argc, const char **argv, RASPIVIDYUV_STATE *state)
             valid = 0;
          else
             i++;
+	  state->veye_camera_isp_state.height = state->height;
          break;
 
       case CommandOutput:  // output filename
@@ -856,7 +858,7 @@ static void camera_buffer_callback(MMAL_PORT_T *port, MMAL_BUFFER_HEADER_T *buff
    {
       int bytes_written = 0;
       int bytes_to_write = buffer->length;
-     vcos_log_error("get one frame len %d", bytes_to_write);
+      vcos_log_error("get one frame len %d", bytes_to_write);
       if (pData->pstate->onlyLuma)
          bytes_to_write = vcos_min(buffer->length, port->format->es->video.width * port->format->es->video.height);
 
@@ -1292,9 +1294,7 @@ int main(int argc, const char **argv)
                while (running)
                {
                   // Change state
-
                   state.bCapturing = !state.bCapturing;
-
                   if (mmal_port_parameter_set_boolean(camera_video_port, MMAL_PARAMETER_CAPTURE, state.bCapturing) != MMAL_SUCCESS)
                   {
                      // How to handle?

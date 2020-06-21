@@ -118,7 +118,6 @@ const int MAX_BITRATE_LEVEL42 = 62500000; // 62.5Mbits/s
 /// Interval at which we check for an failure abort during capture
 const int ABORT_INTERVAL = 100; // ms
 
-
 /// Capture/Pause switch method
 /// Simply capture for time specified
 #define WAIT_METHOD_NONE           0
@@ -588,6 +587,7 @@ static int parse_cmdline(int argc, const char **argv, RASPIVID_STATE *state)
             valid = 0;
          else
             i++;
+	  state->veye_camera_isp_state.width = state->width;
          break;
 
       case CommandHeight: // Height > 0
@@ -595,6 +595,7 @@ static int parse_cmdline(int argc, const char **argv, RASPIVID_STATE *state)
             valid = 0;
          else
             i++;
+	 state->veye_camera_isp_state.height = state->height;
          break;
 
       case CommandBitrate: // 1-100
@@ -1852,6 +1853,7 @@ static MMAL_STATUS_T create_splitter_component(RASPIVID_STATE *state)
    MMAL_ES_FORMAT_T *format;
    MMAL_STATUS_T status;
    MMAL_POOL_T *pool;
+   MMAL_PORT_T *preview_port = NULL, *video_port = NULL;
    int i;
 
    if (state->veye_camera_isp_state.isp_component == NULL)
@@ -1930,6 +1932,8 @@ static MMAL_STATUS_T create_splitter_component(RASPIVID_STATE *state)
          }
       }
 #endif
+    // splitter->output[i]->format->es->video.frame_rate.num = state->framerate;
+  //   vcos_log_error("set encoder splitter out put frame rate  %d ", state->framerate);
       status = mmal_port_format_commit(splitter->output[i]);
 
       if (status != MMAL_SUCCESS)
@@ -1938,7 +1942,38 @@ static MMAL_STATUS_T create_splitter_component(RASPIVID_STATE *state)
          goto error;
       }
    }
+   #if 0
+//xumm add
+  // Set the encode format on the video  port
+   video_port = splitter->output[SPLITTER_ENCODER_PORT];
+/*   format = video_port->format;
+   format->encoding_variant = MMAL_ENCODING_I420;
 
+   format->encoding = MMAL_ENCODING_OPAQUE;
+   format->es->video.width = VCOS_ALIGN_UP(state->width, 16);
+   format->es->video.height = VCOS_ALIGN_UP(state->height, 8);
+   format->es->video.crop.x = 0;
+   format->es->video.crop.y = 0;
+   format->es->video.crop.width = state->width;
+   format->es->video.crop.height = state->height;
+   format->es->video.frame_rate.num = state->framerate;
+   format->es->video.frame_rate.den = VIDEO_FRAME_RATE_DEN;
+*/
+   vcos_log_error("set encoder splitter out put frame rate  %d ", state->framerate);
+   MMAL_PARAMETER_FRAME_RATE_T frame_t = {{MMAL_PARAMETER_FRAME_RATE,sizeof(MMAL_PARAMETER_FRAME_RATE_T)},{state->framerate,30}};
+
+
+  // return mmal_status_to_int(mmal_port_parameter_set(camera->control, &frame_t.hdr));
+   //status = mmal_port_format_commit(video_port);
+   status = mmal_status_to_int(mmal_port_parameter_set(video_port, &frame_t.hdr));
+   //end
+   if (status != MMAL_SUCCESS)
+   {
+      vcos_log_error("camera video format couldn't be set %d ",status);
+      goto error;
+   } 
+#endif
+//end
    /* Enable component */
    status = mmal_component_enable(splitter);
 
@@ -2502,6 +2537,32 @@ static int wait_for_next_change(RASPIVID_STATE *state)
 }
 
 /**
+ *  buffer header callback function for camera
+ *
+ *  Callback will dump buffer data to internal buffer
+ *
+ * @param port Pointer to port from which callback originated
+ * @param buffer mmal buffer header pointer
+ */
+/*static void splitter_output_buffer_callback(MMAL_PORT_T *port, MMAL_BUFFER_HEADER_T *buffer)
+{
+	
+}*/
+
+/** Callback from the connection. Buffer is available. */
+static void connection_callback(MMAL_CONNECTION_T *connection)
+{
+   //struct CONTEXT_T *ctx = (struct CONTEXT_T *)connection->user_data;
+  // fprintf(stderr, "connection_callback\n");
+  vcos_log_error("connection_callback\n");
+   /* The processing is done in our main thread */
+  // vcos_semaphore_post(&ctx->semaphore);
+
+   
+}
+
+
+/**
  * main
  */
 int main(int argc, const char **argv)
@@ -2599,9 +2660,9 @@ int main(int argc, const char **argv)
       encoder_input_port  = state.encoder_component->input[0];
       encoder_output_port = state.encoder_component->output[0];
 
-	  splitter_input_port = state.splitter_component->input[0];
-	  splitter_preview_port = state.splitter_component->output[SPLITTER_PREVIEW_PORT];
-	  splitter_encode_port = state.splitter_component->output[SPLITTER_ENCODER_PORT];
+	splitter_input_port = state.splitter_component->input[0];
+	splitter_preview_port = state.splitter_component->output[SPLITTER_PREVIEW_PORT];
+	splitter_encode_port = state.splitter_component->output[SPLITTER_ENCODER_PORT];
       {
          if (state.verbose)
             fprintf(stderr, "Connecting camera video port to encoder input port\n");
@@ -2631,16 +2692,37 @@ int main(int argc, const char **argv)
 		  vcos_log_error("%s: Failed to connect camera video port to encoder input", __func__);
 		  goto error;
 	  }
-	
-	  // Now connect the camera to the encoder
-	  status = connect_ports(splitter_encode_port, encoder_input_port, &state.encoder_connection);
 
+   //end
+         if (status != MMAL_SUCCESS)
+         {
+            vcos_log_error("camera video format couldn't be set %d ",status);
+            goto error;
+         } 
+		 //if manually set framerate , will set add a framerate controller here
+	  // Now connect the camera to the encoder
+
+/*        status =  mmal_connection_create(&state.encoder_connection, splitter_encode_port, encoder_input_port, 0);
+	 state.encoder_connection->user_data = 0;   
+	 state.encoder_connection->callback = connection_callback;
+	 vcos_log_error("set connection call back! ");
+	 
+	   if (status == MMAL_SUCCESS)
+	   {
+	     
+	      status =  mmal_connection_enable(state.encoder_connection);
+	      if (status != MMAL_SUCCESS)
+	         mmal_connection_destroy(state.encoder_connection);
+	   }
+*/
+	  status = connect_ports(splitter_encode_port, encoder_input_port, &state.encoder_connection);
 	  if (status != MMAL_SUCCESS)
 	  {
 		  state.encoder_connection = NULL;
 		  vcos_log_error("%s: Failed to connect camera video port to encoder input", __func__);
 		  goto error;
 	  }
+
 
       if (status == MMAL_SUCCESS)
       {

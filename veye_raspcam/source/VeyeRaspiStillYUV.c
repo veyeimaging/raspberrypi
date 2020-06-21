@@ -344,6 +344,7 @@ static int parse_cmdline(int argc, const char **argv, RASPISTILLYUV_STATE *state
             valid = 0;
          else
             i++;
+	 state->veye_camera_isp_state.width = state->width;
          break;
 
       case CommandHeight: // Height > 0
@@ -351,6 +352,7 @@ static int parse_cmdline(int argc, const char **argv, RASPISTILLYUV_STATE *state
             valid = 0;
          else
             i++;
+	  state->veye_camera_isp_state.height = state->height;
          break;
 
       case CommandOutput:  // output filename
@@ -383,7 +385,6 @@ static int parse_cmdline(int argc, const char **argv, RASPISTILLYUV_STATE *state
          else
             valid = 0;
          break;
-
       }
 
       case CommandVerbose: // display lots of data during run
@@ -575,6 +576,7 @@ static void camera_control_callback(MMAL_PORT_T *port, MMAL_BUFFER_HEADER_T *buf
    mmal_buffer_header_release(buffer);
 }
 
+
 /**
  *  buffer header callback function for camera output port
  *
@@ -583,6 +585,14 @@ static void camera_control_callback(MMAL_PORT_T *port, MMAL_BUFFER_HEADER_T *buf
  * @param port Pointer to port from which callback originated
  * @param buffer mmal buffer header pointer
  */
+ #define FRAME_COUNT_TEST
+ #ifdef FRAME_COUNT_TEST
+	time_t time_start = 0;
+	time_t time_last = 0;
+	time_t time_now;
+	int framenum = 0;
+	unsigned int timecount = 0;
+#endif
 static void camera_buffer_callback(MMAL_PORT_T *port, MMAL_BUFFER_HEADER_T *buffer)
 {
    int complete = 0;
@@ -626,7 +636,23 @@ static void camera_buffer_callback(MMAL_PORT_T *port, MMAL_BUFFER_HEADER_T *buff
    {
       vcos_log_error("Received a camera still buffer callback with no state");
    }*/
+    #ifdef FRAME_COUNT_TEST
 
+	if(time_start == 0)
+	{
+		time_t time_start = time(0);
+		time_t time_last = time_start;
+	}
+	time_now = time(0);
+	framenum++;
+	if(time_now - time_last >= 1)
+	{
+		fprintf(stderr,"time last %d  get frame number  %d\n",++timecount,framenum);
+	  	time_last = time_now;
+		framenum = 0;
+	}
+	#endif		  
+  //  printf("time last get frame number \n");
    // release buffer back to the pool
    mmal_buffer_header_release(buffer);
 
@@ -759,7 +785,7 @@ static int wait_for_next_frame(RASPISTILLYUV_STATE *state, int *frame)
    // If timeout = 0 then always continue
    if (current_time >= complete_time && state->timeout != 0)
       keep_running = 0;
-    printf("keep looping method %d \n",state->frameNextMethod);
+ //   printf("keep looping method %d \n",state->frameNextMethod);
    switch (state->frameNextMethod)
    {
    case FRAME_NEXT_SINGLE :
@@ -960,21 +986,18 @@ int main(int argc, const char **argv)
  //  MMAL_PORT_T *isp_output_port = NULL;
    
    MMAL_POOL_T *pool;
-  
    
    FILE *output_file = NULL;
 
    bcm_host_init();
 
    // Register our application with the logging system
-   vcos_log_register("VeyeRaspiStill", VCOS_LOG_CATEGORY);
+   vcos_log_register("VeyeRaspiStillYUV", VCOS_LOG_CATEGORY);
 
    signal(SIGINT, signal_handler);
 
    // Disable USR1 for the moment - may be reenabled if go in to signal capture mode
    signal(SIGUSR1, SIG_IGN);
-
-   default_status(&state);
 
    // Do we have any parameters
    if (argc == 1)
@@ -1056,7 +1079,7 @@ int main(int argc, const char **argv)
          callback_data.file_handle = NULL;
          callback_data.pstate = &state;
 
-         vcos_status = vcos_semaphore_create(&callback_data.complete_semaphore, "VeyeRaspiStill-sem", 0);
+         vcos_status = vcos_semaphore_create(&callback_data.complete_semaphore, "VeyeRaspiStillYUV-sem", 0);
          vcos_assert(vcos_status == VCOS_SUCCESS);
 
          camera_video_port->userdata = (struct MMAL_PORT_USERDATA_T *)&callback_data;
@@ -1094,20 +1117,18 @@ int main(int argc, const char **argv)
          FILE *output_file = NULL;
          char *use_filename = NULL;      // Temporary filename while image being written
          char *final_filename = NULL;    // Name that file gets once writing complete
-
-         frame = 0;
+	 
          while (keep_looping)
          {
-           
-	 keep_looping = wait_for_next_frame(&state, &frame);
-	  printf("keep looping %d frame index %d\n",keep_looping,frame);
+	      keep_looping = wait_for_next_frame(&state, &frame);
+//	      printf("keep looping %d frame index %d\n",keep_looping,frame);
+	//endd
             // Open the file
             if (state.filename)
             {
                if (state.filename[0] == '-')
                {
                   output_file = stdout;
-
                   // Ensure we don't upset the output stream with diagnostics/info
                   state.verbose = 0;
                }
@@ -1174,11 +1195,11 @@ int main(int argc, const char **argv)
 
                if (output_file != stdout)
                {
-                  rename_file(&state, output_file, final_filename, use_filename, frame);
+                  	rename_file(&state, output_file, final_filename, use_filename, frame);
                }
                else
                {
-                  fflush(output_file);
+                  	fflush(output_file);
                }
             }
 

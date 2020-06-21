@@ -17,6 +17,8 @@ typedef struct
                         //0:1080p@30fps
                         ///1: 720p@60fps
                         ///2 vga 130fps
+	int width;          // use to replace sensor_mode
+	int height;         //  use to replace sensor_mode
 } VEYE_CAMERA_ISP_STATE;
 
 

@@ -383,6 +383,7 @@ static int parse_cmdline(int argc, const char **argv, RASPISTILL_STATE *state)
             valid = 0;
          else
             i++;
+	state->veye_camera_isp_state.width = state->width;
          break;
 
       case CommandHeight: // Height > 0
@@ -390,6 +391,7 @@ static int parse_cmdline(int argc, const char **argv, RASPISTILL_STATE *state)
             valid = 0;
          else
             i++;
+	  state->veye_camera_isp_state.height = state->height;
          break;
  	case CommandQuality: // Quality = 1-100
          if (sscanf(argv[i + 1], "%u", &state->quality) == 1)
