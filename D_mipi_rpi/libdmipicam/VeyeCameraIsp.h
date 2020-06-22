@@ -19,6 +19,7 @@ typedef struct
                         //2: VGA@120FPS
     int width;          // use to replace sensor_mode
     int height;         //  use to replace sensor_mode
+    MMAL_FOURCC_T out_yuv_fmt; //MMAL_ENCODING_I420 default
 } VEYE_CAMERA_ISP_STATE;
 
 
