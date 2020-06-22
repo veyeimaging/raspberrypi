@@ -1022,7 +1022,7 @@ int main(int argc, const char **argv)
       fprintf(stderr, "\n%s Camera App %s\n\n", basename((char*)argv[0]), VERSION_STRING);
       dump_status(&state);
    }
-
+//   state.veye_camera_isp_state.out_yuv_fmt = MMAL_ENCODING_UYVY;
    // OK, we have a nice set of parameters. Now set up our components
    // We have two components. Camera and Preview
    // Camera is different in stills/video, but preview
