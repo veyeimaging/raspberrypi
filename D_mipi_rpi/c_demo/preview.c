@@ -9,25 +9,25 @@
 
 int main(int argc, char **argv) {
     CAMERA_INSTANCE camera_instance;
-    int width = 0, height = 0;
     
+    struct format videofmt;
+    videofmt.width = 1920;
+    videofmt.height = 1080;
+    videofmt.maxframrate = 30;
     struct camera_interface cam_interface;
     cam_interface.camera_num = -1; //0or1 for CM
     LOG("Open camera...");
-    int res = D_init_camera(&camera_instance,cam_interface);
+    int res = D_init_camera_ex(&camera_instance,cam_interface,&videofmt);
     if (res) {
         LOG("init camera status = %d", res);
         return -1;
     }
-    width = 1920;
-    height = 1080;
 
-  
     LOG("Start preview...");
     PREVIEW_PARAMS preview_params = {
         .fullscreen = 0,             // 0 is use previewRect, non-zero to use full screen
         .opacity = 255,              // Opacity of window - 0 = transparent, 255 = opaque
-        .window = {0, 0, 1280, 720}, // Destination rectangle for the preview window.
+        .window = {0, 0, 1920, 1080}, // Destination rectangle for the preview window.
     };
     res = D_start_preview(camera_instance, &preview_params);
     if (res) {

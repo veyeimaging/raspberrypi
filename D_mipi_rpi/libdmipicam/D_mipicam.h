@@ -14,12 +14,11 @@ extern "C" {
 #define FOURCC(a, b, c, d) ((a) | (b << 8) | (c << 16) | (d << 24))
 
 #define IMAGE_ENCODING_I420 FOURCC('I', '4', '2', '0')
-#define IMAGE_ENCODING_I422 FOURCC('I', '4', '2', '0') //reserved
+#define IMAGE_ENCODING_I422 FOURCC('I', '4', '2', '2') //reserved
 #define IMAGE_ENCODING_JPEG FOURCC('J', 'P', 'E', 'G')
 #define IMAGE_ENCODING_BMP FOURCC('B', 'M', 'P','')
-#define IMAGE_ENCODING_PNG FOURCC('P', 'N', 'P','')
+#define IMAGE_ENCODING_PNG FOURCC('P', 'N', 'G','')
 #define VIDEO_ENCODING_H264 FOURCC('H', '2', '6', '4')
-
 
 
 #define OUTPUT_FLAG_KEEP_BUFFER_REQUIREMENTS 0x08
@@ -167,6 +166,21 @@ typedef void *CAMERA_INSTANCE;
  @note Some boards have multiple camera interfaces.
  * */
 int D_init_camera(CAMERA_INSTANCE *camera_instance, struct camera_interface cam_interface);
+
+/**
+ * init camera.
+ * @param camera_instance Pointer of type CAMERA_INSTANCE, use to obtain CAMERA_INSTANCE.
+ * @param camera_num Camera interface num.
+ * @return error code , 0 success, !0 error.
+ * 
+ * example:
+ @code
+    CAMERA_INStANCE camera_instance;
+    D_init_camera(&camera_instance, 0,&videofmt);
+ @endcode
+ @note Some boards have multiple camera interfaces.
+ * */
+int D_init_camera_ex(CAMERA_INSTANCE *camera_instance, struct camera_interface cam_interface,struct format* pvideofmt);
 
 /**
  * Start video stream, H264
