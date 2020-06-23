@@ -1,6 +1,6 @@
 '''
-This script is a wrapper for the libD_mipicamera.so dynamic library. 
-To use this script you need to pre-install libD_mipicamera.so
+This script is a wrapper for the libdmipicam.so dynamic library. 
+To use this script you need to pre-install libdmipicam.so
 '''
 from ctypes import *
 import numpy as np
@@ -21,7 +21,7 @@ IMAGE_ENCODING_I422 = FOURCC('I', '4', '2', '2')      #reserved
 IMAGE_ENCODING_JPEG = FOURCC('J', 'P', 'E', 'G')
 IMAGE_ENCODING_RAW_BAYER = FOURCC('R', 'A', 'W', ' ')
 IMAGE_ENCODING_BMP = FOURCC('B', 'M', 'P',' ')
-IMAGE_ENCODING_PNG = FOURCC('P', 'N', 'P',' ')
+IMAGE_ENCODING_PNG = FOURCC('P', 'N', 'G',' ')
 VIDEO_ENCODING_H264 = FOURCC('H', '2', '6', '4')
 
 
@@ -124,7 +124,12 @@ class BUFFER(Structure):
         ("userdata",c_void_p),
     ]
 
-
+class FORMAT(Structure):
+    _fields_ = [
+        ("width",c_int),
+        ("height",c_int),
+        ("framerate",c_uint32),
+    ]
 
 class CAMERA_INTERFACE(Structure):
     _fields_ = [
@@ -140,6 +145,10 @@ OUTPUT_CALLBACK = CFUNCTYPE(c_int, POINTER(BUFFER))
 D_init_camera = camera_lib.D_init_camera
 D_init_camera.argtypes = [POINTER(c_void_p), CAMERA_INTERFACE]
 D_init_camera.restype = c_int
+
+D_init_camera_ex = camera_lib.D_init_camera_ex
+D_init_camera_ex.argtypes = [POINTER(c_void_p), CAMERA_INTERFACE, POINTER(FORMAT)]
+D_init_camera_ex.restype = c_int
 
 D_start_preview = camera_lib.D_start_preview
 D_start_preview.argtypes = [c_void_p, POINTER(PREVIEW_PARAMS)]
@@ -334,7 +343,7 @@ class mipi_camera(object):
             'level': VIDEO_LEVEL_H264_4,
             'inlineMotionVectors': 0,
             'intra_refresh_type': -1,
-            'addSPSTiming': 0,
+            'addSPSTiming': 1,
             'slices':1,
             }
         for arg_name in options:

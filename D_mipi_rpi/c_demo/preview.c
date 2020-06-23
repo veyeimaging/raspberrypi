@@ -13,7 +13,7 @@ int main(int argc, char **argv) {
     struct format videofmt;
     videofmt.width = 1920;
     videofmt.height = 1080;
-    videofmt.maxframrate = 30;
+    videofmt.framerate = 30;
     struct camera_interface cam_interface;
     cam_interface.camera_num = -1; //0or1 for CM
     LOG("Open camera...");

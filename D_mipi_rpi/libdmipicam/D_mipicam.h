@@ -135,7 +135,7 @@ typedef struct {
 struct format {
     int width;
     int height;
-    int maxframrate; //此分辨率下最大帧率
+    int framerate; 
 };
 // i2c is reserved,because we use shell script to do do param setting
 struct camera_interface {

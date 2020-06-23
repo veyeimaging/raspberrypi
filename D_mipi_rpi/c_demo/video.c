@@ -67,8 +67,12 @@ int main(int argc, char **argv) {
     int width = 0, height = 0;
     struct camera_interface cam_interface;
     cam_interface.camera_num = -1; //0or1 for CM
+    struct format videofmt;
+    videofmt.width = 1920;
+    videofmt.height = 1080;
+    videofmt.framerate = 30;
     LOG("Open camera...");
-    int res = D_init_camera(&camera_instance,cam_interface);
+    int res = D_init_camera_ex(&camera_instance,cam_interface,&videofmt);
     if (res) {
         LOG("init camera status = %d", res);
         return -1;
