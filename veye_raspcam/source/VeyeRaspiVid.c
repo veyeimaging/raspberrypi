@@ -243,6 +243,8 @@ struct RASPIVID_STATE_S
    int64_t lasttime;
 
    bool netListen;
+   MMAL_BOOL_T addSPSTiming;
+   int slices;
 };
 
 
@@ -333,6 +335,8 @@ static void display_valid_parameters( char *app_name);
 #define CommandRaw          32
 #define CommandRawFormat    33
 #define CommandNetListen    34
+#define CommandSPSTimings	35
+#define CommandSlices		36
 
 static COMMAND_LIST cmdline_commands[] =
 {
@@ -374,6 +378,8 @@ static COMMAND_LIST cmdline_commands[] =
    { CommandRaw,           "-raw",        "r",  "Output filename <filename> for raw video", 1 },
    { CommandRawFormat,     "-raw-format", "rf", "Specify output format for raw video. Default is yuv", 1},
    { CommandNetListen,     "-listen",     "l", "Listen on a TCP socket", 0},
+   { CommandSPSTimings,    "-spstimings",    "stm", "Add in h.264 sps timings", 0},
+   { CommandSlices   ,     "-slices",     "sl", "Horizontal slices per frame. Default 1 (off)", 1},
 };
 
 static int cmdline_commands_size = sizeof(cmdline_commands) / sizeof(cmdline_commands[0]);
@@ -451,6 +457,8 @@ static void default_status(RASPIVID_STATE *state)
    state->save_pts = 0;
 
    state->netListen = false;
+   state->addSPSTiming = MMAL_FALSE;
+   state->slices = 1;
 
 
    // Setup preview window defaults
@@ -515,7 +523,9 @@ static void dump_status(RASPIVID_STATE *state)
    fprintf(stderr, "H264 Profile %s\n", raspicli_unmap_xref(state->profile, profile_map, profile_map_size));
    fprintf(stderr, "H264 Level %s\n", raspicli_unmap_xref(state->level, level_map, level_map_size));
    fprintf(stderr, "H264 Quantisation level %d, Inline headers %s\n", state->quantisationParameter, state->bInlineHeaders ? "Yes" : "No");
+   fprintf(stderr, "H264 Fill SPS Timings %s\n", state->addSPSTiming ? "Yes" : "No");
    fprintf(stderr, "H264 Intra refresh type %s, period %d\n", raspicli_unmap_xref(state->intra_refresh_type, intra_refresh_map, intra_refresh_map_size), state->intraperiod);
+   fprintf(stderr, "H264 Slices %d\n", state->slices);
 
    // Not going to display segment data unless asked for it.
    if (state->segmentSize)
@@ -674,6 +684,7 @@ static int parse_cmdline(int argc, const char **argv, RASPIVID_STATE *state)
          if (sscanf(argv[i + 1], "%u", &state->framerate) == 1)
          {
             // TODO : What limits do we need for fps 1 - 30 - 120??
+            state->veye_camera_isp_state.framerate = state->framerate;
             i++;
          }
          else
@@ -941,7 +952,21 @@ static int parse_cmdline(int argc, const char **argv, RASPIVID_STATE *state)
 
          break;
       }
+      case CommandSlices:
+      {
+         if ((sscanf(argv[i + 1], "%d", &state->slices) == 1) && (state->slices > 0))
+            i++;
+         else
+            valid = 0;
+         break;
+      }
 
+      case CommandSPSTimings:
+      {
+         state->addSPSTiming = MMAL_TRUE;
+
+         break;
+      }
       default:
       {
          // Try parsing for any image specific parameters
@@ -1727,7 +1752,7 @@ static MMAL_STATUS_T create_camera_component(RASPIVID_STATE *state)
    format->es->video.crop.y = 0;
    format->es->video.crop.width = state->width;
    format->es->video.crop.height = state->height;
-   format->es->video.frame_rate.num = PREVIEW_FRAME_RATE_NUM;
+   format->es->video.frame_rate.num = state->framerate;
    format->es->video.frame_rate.den = PREVIEW_FRAME_RATE_DEN;
 
    status = mmal_port_format_commit(preview_port);
@@ -1933,7 +1958,7 @@ static MMAL_STATUS_T create_splitter_component(RASPIVID_STATE *state)
       }
 #endif
     // splitter->output[i]->format->es->video.frame_rate.num = state->framerate;
-  //   vcos_log_error("set encoder splitter out put frame rate  %d ", state->framerate);
+    // vcos_log_error("set encoder splitter out put frame rate  %d ", state->framerate);
       status = mmal_port_format_commit(splitter->output[i]);
 
       if (status != MMAL_SUCCESS)
@@ -2116,6 +2141,7 @@ static MMAL_STATUS_T create_encoder_component(RASPIVID_STATE *state)
    // We need to set the frame rate on output to 0, to ensure it gets
    // updated correctly from the input framerate when port connected
    encoder_output->format->es->video.frame_rate.num = 0;
+//   encoder_output->format->es->video.frame_rate.num = state->framerate;
    encoder_output->format->es->video.frame_rate.den = 1;
 
    // Commit the port changes to the output port
@@ -2219,48 +2245,56 @@ static MMAL_STATUS_T create_encoder_component(RASPIVID_STATE *state)
       // Continue rather than abort..
    }
 
-   //set INLINE HEADER flag to generate SPS and PPS for every IDR if requested
-   if (mmal_port_parameter_set_boolean(encoder_output, MMAL_PARAMETER_VIDEO_ENCODE_INLINE_HEADER, state->bInlineHeaders) != MMAL_SUCCESS)
+   if (state->encoding == MMAL_ENCODING_H264)
    {
-      vcos_log_error("failed to set INLINE HEADER FLAG parameters");
-      // Continue rather than abort..
-   }
-
-   //set INLINE VECTORS flag to request motion vector estimates
-   if (state->encoding == MMAL_ENCODING_H264 &&
-       mmal_port_parameter_set_boolean(encoder_output, MMAL_PARAMETER_VIDEO_ENCODE_INLINE_VECTORS, state->inlineMotionVectors) != MMAL_SUCCESS)
-   {
-      vcos_log_error("failed to set INLINE VECTORS parameters");
-      // Continue rather than abort..
-   }
-
-   // Adaptive intra refresh settings
-   if (state->encoding == MMAL_ENCODING_H264 &&
-       state->intra_refresh_type != -1)
-   {
-      MMAL_PARAMETER_VIDEO_INTRA_REFRESH_T  param;
-      param.hdr.id = MMAL_PARAMETER_VIDEO_INTRA_REFRESH;
-      param.hdr.size = sizeof(param);
-
-      // Get first so we don't overwrite anything unexpectedly
-      status = mmal_port_parameter_get(encoder_output, &param.hdr);
-      if (status != MMAL_SUCCESS)
+      //set INLINE HEADER flag to generate SPS and PPS for every IDR if requested
+      if (mmal_port_parameter_set_boolean(encoder_output, MMAL_PARAMETER_VIDEO_ENCODE_INLINE_HEADER, state->bInlineHeaders) != MMAL_SUCCESS)
       {
-         vcos_log_warn("Unable to get existing H264 intra-refresh values. Please update your firmware");
-         // Set some defaults, don't just pass random stack data
-         param.air_mbs = param.air_ref = param.cir_mbs = param.pir_mbs = 0;
+         vcos_log_error("failed to set INLINE HEADER FLAG parameters");
+         // Continue rather than abort..
       }
 
-      param.refresh_mode = state->intra_refresh_type;
-
-      //if (state->intra_refresh_type == MMAL_VIDEO_INTRA_REFRESH_CYCLIC_MROWS)
-      //   param.cir_mbs = 10;
-
-      status = mmal_port_parameter_set(encoder_output, &param.hdr);
-      if (status != MMAL_SUCCESS)
+      //set flag for add SPS TIMING
+      if (mmal_port_parameter_set_boolean(encoder_output, MMAL_PARAMETER_VIDEO_ENCODE_SPS_TIMING, state->addSPSTiming) != MMAL_SUCCESS)
       {
-         vcos_log_error("Unable to set H264 intra-refresh values");
-         goto error;
+         vcos_log_error("failed to set SPS TIMINGS FLAG parameters");
+         // Continue rather than abort..
+      }
+
+      //set INLINE VECTORS flag to request motion vector estimates
+      if (mmal_port_parameter_set_boolean(encoder_output, MMAL_PARAMETER_VIDEO_ENCODE_INLINE_VECTORS, state->inlineMotionVectors) != MMAL_SUCCESS)
+      {
+         vcos_log_error("failed to set INLINE VECTORS parameters");
+         // Continue rather than abort..
+      }
+
+      // Adaptive intra refresh settings
+      if ( state->intra_refresh_type != -1)
+      {
+         MMAL_PARAMETER_VIDEO_INTRA_REFRESH_T  param;
+         param.hdr.id = MMAL_PARAMETER_VIDEO_INTRA_REFRESH;
+         param.hdr.size = sizeof(param);
+
+         // Get first so we don't overwrite anything unexpectedly
+         status = mmal_port_parameter_get(encoder_output, &param.hdr);
+         if (status != MMAL_SUCCESS)
+         {
+            vcos_log_warn("Unable to get existing H264 intra-refresh values. Please update your firmware");
+            // Set some defaults, don't just pass random stack data
+            param.air_mbs = param.air_ref = param.cir_mbs = param.pir_mbs = 0;
+         }
+
+         param.refresh_mode = state->intra_refresh_type;
+
+         //if (state->intra_refresh_type == MMAL_VIDEO_INTRA_REFRESH_CYCLIC_MROWS)
+         //   param.cir_mbs = 10;
+
+         status = mmal_port_parameter_set(encoder_output, &param.hdr);
+         if (status != MMAL_SUCCESS)
+         {
+            vcos_log_error("Unable to set H264 intra-refresh values");
+            goto error;
+         }
       }
    }
 
@@ -2737,7 +2771,7 @@ int main(int argc, const char **argv)
             if (state.filename[0] == '-')
             {
                state.callback_data.file_handle = stdout;
-		 vcos_log_error("file handle is stdout!");
+		 	   vcos_log_error("file handle is stdout!");
             }
             else
             {

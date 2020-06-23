@@ -733,6 +733,7 @@ int main(int argc, const char **argv)
    // We have two components. Camera and Preview
    // Camera is different in stills/video, but preview
    // is the same so handed off to a separate module
+//   state.veye_camera_isp_state.out_yuv_fmt = MMAL_ENCODING_NV12;
    fprintf(stderr, "before create camera com \n");
    if ((status = create_veye_camera_isp_component(&state.veye_camera_isp_state,state.cameraNum)) != MMAL_SUCCESS)
    {
