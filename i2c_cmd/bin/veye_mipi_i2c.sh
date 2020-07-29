@@ -19,7 +19,7 @@ print_usage()
 	echo "    -p2 [param1] 			   param2 of each function"
 	echo "    -b [i2c bus num] 		   i2c bus number"
 	echo "support functions: devid,hdver,wdrmode,videoformat,mirrormode,denoise,agc,lowlight,daynightmode,ircutdir,irtrigger£¬mshutter"
-    echo "cameramode, notf, capture, csienable,saturation,wdrbtargetbr, brightness ,contrast , sharppen, aespeed"
+    echo "cameramode, notf, capture, csienable,saturation,wdrbtargetbr,wdrtargetbr, brightness ,contrast , sharppen, aespeed"
 }
 ######################parse arg###################################
 MODE=read;
@@ -494,15 +494,6 @@ write_brightness()
 	printf "w brightness is 0x%2x\n" $PARAM1;
 }
 
-read_contrast()
-{
-    printf "contrast not supported yet\n";
-}
-
-write_contrast()
-{
-    printf "contrast not supported yet\n";
-}
 
 read_sharppen()
 {
@@ -550,6 +541,52 @@ write_aespeed()
 	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x12 $PARAM2);
 	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x13 0x00 );
 	printf "w agcspeed is 0x%2x shutterspeed is 0x%2x\n" $PARAM1 $PARAM2;
+}
+
+read_wdrtargetbr()
+{
+	local wdrtargetbr=0;
+	local res=0;
+    res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x10 0xDA );
+	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x11 0xC1 );
+	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x13 0x01 );
+    sleep 0.01;
+	res=$(./i2c_read $I2C_DEV $I2C_ADDR  0x14 );
+	wdrtargetbr=$?;
+	printf "r wdrtargetbr is 0x%2x\n" $wdrtargetbr;
+}
+write_wdrtargetbr()
+{
+	local wdrtargetbr=0;
+	local res=0;
+	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x10 0xDA );
+	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x11 0xC1 );
+	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x12 $PARAM1);
+	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x13 0x00 );
+	printf "w wdrtargetbr is 0x%2x\n" $PARAM1;
+}
+
+read_contrast()
+{
+	local contrast=0;
+	local res=0;
+    res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x10 0x49 );
+	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x11 0x59 );
+	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x13 0x01 );
+    	sleep 0.01;
+	res=$(./i2c_read $I2C_DEV $I2C_ADDR  0x14 );
+	contrast=$?;
+	printf "r contrast is 0x%2x\n" $contrast;
+}
+write_contrast()
+{
+	local contrast=0;
+	local res=0;
+	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x10 0x49 );
+	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x11 0x59 );
+	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x12 $PARAM1);
+	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x13 0x00 );
+	printf "w contrast is 0x%2x\n" $PARAM1;
 }
 
 #######################Action# BEGIN##############################
@@ -625,6 +662,10 @@ if [ ${MODE} = "read" ] ; then
         "sharppen")
             read_sharppen;
             ;;
+	"wdrtargetbr")
+			read_wdrtargetbr;
+			;;
+
 	esac
 fi
 
@@ -700,5 +741,8 @@ if [ ${MODE} = "write" ] ; then
         "sharppen")
             write_sharppen;
             ;;
+        "wdrtargetbr")
+			write_wdrtargetbr;
+			;;
 	esac
 fi
