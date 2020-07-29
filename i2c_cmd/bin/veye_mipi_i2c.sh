@@ -19,7 +19,7 @@ print_usage()
 	echo "    -p2 [param1] 			   param2 of each function"
 	echo "    -b [i2c bus num] 		   i2c bus number"
 	echo "support functions: devid,hdver,wdrmode,videoformat,mirrormode,denoise,agc,lowlight,daynightmode,ircutdir,irtrigger£¬mshutter"
-    echo "cameramode, notf, capture, csienable,saturation,wdrbtargetbr "
+    echo "cameramode, notf, capture, csienable,saturation,wdrbtargetbr, brightness ,contrast , sharppen, aespeed"
 }
 ######################parse arg###################################
 MODE=read;
@@ -439,6 +439,119 @@ write_wdrbtargetbr()
 	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x13 0x00 );
 	printf "w wdrbtargetbr is 0x%2x\n" $PARAM1;
 }
+    
+read_brightness()
+{
+    local videoformat=0;
+    local brightness=0;
+	local res=0;
+    res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x10 0xDE );
+	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x11 0xC2 );
+    res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x13 0x01 );
+    sleep 0.01;
+	res=$(./i2c_read $I2C_DEV $I2C_ADDR  0x14 );
+	videoformat=$?;
+    sleep 0.01;
+    if [ $videoformat -eq 1 ] ; then
+        res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x10 0xDA );
+        res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x11 0x65 );
+		printf "Video Format is NTSC(60Hz) \n";
+	fi
+	if [ $videoformat -eq 0 ] ; then
+        res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x10 0xDA );
+        res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x11 0x1A );
+		printf "Video Format is PAL(50Hz)\n";
+	fi
+	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x13 0x01 );
+    sleep 0.01;
+	res=$(./i2c_read $I2C_DEV $I2C_ADDR  0x14 );
+	brightness=$?;
+	printf "r brightness is 0x%2x\n" $brightness;
+}
+write_brightness()
+{
+    local videoformat=0;
+	local res=0;
+    res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x10 0xDE );
+	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x11 0xC2 );
+    res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x13 0x01 );
+    sleep 0.01;
+	res=$(./i2c_read $I2C_DEV $I2C_ADDR  0x14 );
+	videoformat=$?;
+    sleep 0.01;
+    if [ $videoformat -eq 1 ] ; then
+        res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x10 0xDA );
+        res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x11 0x65 );
+		printf "Video Format is NTSC(60Hz) \n";
+	fi
+	if [ $videoformat -eq 0 ] ; then
+        res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x10 0xDA );
+        res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x11 0x1A );
+		printf "Video Format is PAL(50Hz)\n";
+	fi
+    res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x12 $PARAM1 );
+    res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x13 0x00 );
+	printf "w brightness is 0x%2x\n" $PARAM1;
+}
+
+read_contrast()
+{
+    printf "contrast not supported yet\n";
+}
+
+write_contrast()
+{
+    printf "contrast not supported yet\n";
+}
+
+read_sharppen()
+{
+    printf "sharppen not supported yet\n";
+}
+
+write_sharppen()
+{
+    printf "sharppen not supported yet\n";
+}
+
+read_aespeed()
+{
+    local agcspeed=0;
+    local shutterspeed=0;
+	local res=0;
+    res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x10 0xDA );
+	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x11 0x18 );
+	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x13 0x01 );
+    sleep 0.01;
+	res=$(./i2c_read $I2C_DEV $I2C_ADDR  0x14 );
+	agcspeed=$?;
+    sleep 0.01;
+    res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x10 0xDA );
+	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x11 0x1B );
+	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x13 0x01 );
+    sleep 0.01;
+	res=$(./i2c_read $I2C_DEV $I2C_ADDR  0x14 );
+	shutterspeed=$?;
+	printf "r agcspeed is 0x%2x shutter speed is 0x%2x\n" $agcspeed $shutterspeed;
+}
+write_aespeed()
+{
+    local agcspeed=0;
+    local shutterspeed=0;
+	local res=0;
+
+	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x10 0xDA );
+	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x11 0x18 );
+	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x12 $PARAM1);
+	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x13 0x00 );
+    
+    res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x10 0xDA );
+	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x11 0x1B );
+	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x12 $PARAM2);
+	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x13 0x00 );
+	printf "w agcspeed is 0x%2x shutterspeed is 0x%2x\n" $PARAM1 $PARAM2;
+}
+
 #######################Action# BEGIN##############################
 
 pinmux;
@@ -491,15 +604,29 @@ if [ ${MODE} = "read" ] ; then
         "csienable")
 			read_csienable;
 			;;
-	"saturation")
+        "saturation")
 			read_saturation;
 			;;
         "wdrbtargetbr")
 			read_wdrbtargetbr;
 			;;
+        "brightness")
+			read_brightness;
+			;;
+        "aespeed")
+			read_aespeed;
+			;;
+        "contrast")
+            read_contrast;
+            ;;
+        "satu")
+            read_satu;
+            ;;
+        "sharppen")
+            read_sharppen;
+            ;;
 	esac
 fi
-
 
 
 if [ ${MODE} = "write" ] ; then
@@ -552,12 +679,26 @@ if [ ${MODE} = "write" ] ; then
         "csienable")
 			write_csienable;
 			;;
-	"saturation")
+        "saturation")
 			write_saturation;
 			;;
         "wdrbtargetbr")
 			write_wdrbtargetbr;
 			;;
+        "brightness")
+			write_brightness;
+			;;
+        "aespeed")
+			write_aespeed;
+			;;
+        "contrast")
+            write_contrast;
+            ;;
+        "satu")
+            write_satu;
+            ;;
+        "sharppen")
+            write_sharppen;
+            ;;
 	esac
 fi
-
