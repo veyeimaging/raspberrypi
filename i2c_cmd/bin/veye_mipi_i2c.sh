@@ -5,7 +5,7 @@
 #set camera i2c pin mux
 #
 
-I2C_DEV=0;
+I2C_DEV=6;
 I2C_ADDR=0x3b;
 
 print_usage()
@@ -18,7 +18,7 @@ print_usage()
 	echo "    -p1 [param1] 			   param1 of each function"
 	echo "    -p2 [param1] 			   param2 of each function"
 	echo "    -b [i2c bus num] 		   i2c bus number"
-	echo "support functions: devid,hdver,wdrmode,videoformat,mirrormode,denoise,agc,lowlight,daynightmode,ircutdir,irtrigger£¬mshutter"
+	echo "support functions: devid,hdver,wdrmode,videoformat,mirrormode,denoise,agc,lowlight,daynightmode,ircutdir,irtrigger¡ê?mshutter"
     echo "cameramode, notf, capture, csienable,saturation,wdrbtargetbr,wdrtargetbr, brightness ,contrast , sharppen, aespeed"
 }
 ######################parse arg###################################
@@ -85,11 +85,6 @@ if [ $# -lt 1 ]; then
     print_usage;
     exit 0;
 fi
-
-pinmux()
-{
-	sh ./camera_i2c_config >> /dev/null 2>&1
-}
 
 read_devid()
 {
@@ -180,7 +175,6 @@ read_mirrormode()
 	mirrormode=$?;
 	printf "r mirrormode is 0x%2x\n" $mirrormode;
 }
-
 write_mirrormode()
 {
 	local mirrormode=0;
@@ -570,7 +564,7 @@ read_contrast()
 {
 	local contrast=0;
 	local res=0;
-    res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x10 0x49 );
+    	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x10 0x49 );
 	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x11 0x59 );
 	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x13 0x01 );
     	sleep 0.01;
@@ -591,7 +585,12 @@ write_contrast()
 
 #######################Action# BEGIN##############################
 
-pinmux;
+if [ `whoami` != "root" ];then
+	echo "should be root!";
+    exit 0;
+fi
+
+echo 100000 > /sys/bus/i2c/devices/i2c-$I2C_DEV/bus_clk_rate
 ./i2c_write $I2C_DEV $I2C_ADDR  0x07 0xFE&> /dev/null;
 
 if [ ${MODE} = "read" ] ; then
@@ -665,9 +664,9 @@ if [ ${MODE} = "read" ] ; then
 	"wdrtargetbr")
 			read_wdrtargetbr;
 			;;
-
 	esac
 fi
+
 
 
 if [ ${MODE} = "write" ] ; then
@@ -746,3 +745,5 @@ if [ ${MODE} = "write" ] ; then
 			;;
 	esac
 fi
+
+
