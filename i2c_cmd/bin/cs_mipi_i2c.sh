@@ -75,7 +75,7 @@ print_usage()
 	echo "    -b [i2c bus num] 		   i2c bus number"
     echo "    -d [i2c addr] 		   i2c addr if not default 0x3b"
     echo "support functions: devid,hdver,camcap,firmwarever,productmodel,videofmtcap,videofmt,ispcap,i2caddr,streammode,powerhz,
-     daynightmode ,hue ,contrast , satu , expostate , wbstate ,expmode , aetarget, aetime,aeagc,metime ,meagain , medgain , awbmode , mwbcolortemp , mwbgain,imagedir,sreg,striggerone,triggeredge,autotgcnt,tgdebncr,tgdly,pickmode,pickone,mipistatus,ledstrobe,sysreboot,sysreset,paramsave"
+     daynightmode ,hue ,contrast , satu , expostate , wbstate ,expfrmmode,expmode , aetarget, aetime,aeagc,metime ,meagain , medgain , awbmode , mwbcolortemp , mwbgain,imagedir,sreg,striggerone,triggeredge,autotgcnt,tgdebncr,tgdly,pickmode,pickone,mipistatus,ledstrobe,sysreboot,sysreset,paramsave"
 }
 
 ######################reglist###################################
@@ -157,6 +157,7 @@ CSC_HUE=0x0206;
 CSC_CONTT=0x0207;
 CSC_SATU=0x0208;
 
+EXP_FRM_MODE=0x020F;
 AE_MODE=0x0210;
 EXP_TIME_L=0x0211;
 EXP_TIME_M=0x0212;
@@ -706,6 +707,23 @@ read_wbstate()
     colortemp=$((data_h*256+data_l));
     printf "r wb state rgain %02x , ggain %02x, bgain %02x  color temperature %d\n" $rgain $ggain $bgain $colortemp;
 }
+
+read_expfrmmode()
+{
+    local expfrmmode=0;
+	local res=0;
+	res=$(./i2c_read $I2C_DEV $I2C_ADDR $EXP_FRM_MODE);
+	expfrmmode=$?;
+    printf "r expfrmmode 0x%2x\n" $expfrmmode;
+}
+
+write_expfrmmode()
+{
+    local res=0;
+	res=$(./i2c_write $I2C_DEV $I2C_ADDR  $EXP_FRM_MODE $PARAM1 );
+    printf "w expfrmmode 0x%2x \n" $PARAM1;
+}
+
 
 read_expmode()
 {
@@ -1267,6 +1285,9 @@ if [ ${MODE} = "read" ] ; then
         "wbstate")
             read_wbstate;
 			;;
+        "expfrmmode")
+            read_expfrmmode;
+			;;
         "expmode")
             read_expmode;
 			;;
@@ -1358,6 +1379,9 @@ if [ ${MODE} = "write" ] ; then
 			;;
         "satu")
             write_satu;
+			;;
+        "expfrmmode")
+            write_expfrmmode;
 			;;
         "expmode")
             write_expmode;
