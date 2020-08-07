@@ -571,7 +571,7 @@ read_contrast()
 	local contrast=0;
 	local res=0;
     res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x10 0x49 );
-	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x11 0x59 );
+	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x11 0x5B );
 	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x13 0x01 );
     	sleep 0.01;
 	res=$(./i2c_read $I2C_DEV $I2C_ADDR  0x14 );
@@ -583,7 +583,7 @@ write_contrast()
 	local contrast=0;
 	local res=0;
 	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x10 0x49 );
-	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x11 0x59 );
+	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x11 0x5B );
 	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x12 $PARAM1);
 	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x13 0x00 );
 	printf "w contrast is 0x%2x\n" $PARAM1;
