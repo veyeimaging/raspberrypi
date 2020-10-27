@@ -19,15 +19,17 @@ print_usage()
 	echo "    -p2 [param1] 			   param2 of each function"
 	echo "    -b [i2c bus num] 		   i2c bus number"
 	echo "support functions: devid,hdver,wdrmode,videoformat,mirrormode,denoise,agc,lowlight,daynightmode,ircutdir,irtrigger£¬mshutter"
-    echo "cameramode, notf, capture, csienable,saturation,wdrbtargetbr,wdrtargetbr, brightness ,contrast , sharppen, aespeed"
+    echo "cameramode, notf, capture, csienable,saturation,wdrbtargetbr,wdrtargetbr, brightness ,contrast , sharppen, aespeed,lsc"
 }
 ######################parse arg###################################
 MODE=read;
 FUNCTION=version;
 PARAM1=0;
 PARAM2=0;
+PARAM3=0;
 b_arg_param1=0;
 b_arg_param2=0;
+b_arg_param3=0;
 b_arg_functin=0;
 b_arg_bus=0;
 
@@ -50,6 +52,10 @@ do
 		b_arg_param2=0;
 		PARAM2=$arg;
 	fi
+    if [ $b_arg_param3 -eq 1 ] ; then
+		b_arg_param3=0;
+		PARAM3=$arg;
+	fi
 	if [ $b_arg_bus -eq 1 ] ; then
 		b_arg_bus=0;
 		I2C_DEV=$arg;
@@ -69,6 +75,9 @@ do
 			;;
 		"-p2")
 			b_arg_param2=1;
+			;;
+        "-p3")
+			b_arg_param3=1;
 			;;
 		"-b")
 			b_arg_bus=1;
@@ -497,12 +506,42 @@ write_brightness()
 
 read_sharppen()
 {
-    printf "sharppen not supported yet\n";
+    local sharppen_enable=0;
+    local sharppen_val=0;
+	local res=0;
+    res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x10 0xD9 );
+	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x11 0x5D );
+	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x13 0x01 );
+    sleep 0.01;
+	res=$(./i2c_read $I2C_DEV $I2C_ADDR  0x14 );
+	sharppen_enable=$?;
+    sleep 0.01;
+    res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x10 0xD9 );
+	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x11 0x52 );
+	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x13 0x01 );
+    sleep 0.01;
+	res=$(./i2c_read $I2C_DEV $I2C_ADDR  0x14 );
+	sharppen_val=$(($?>>4));
+	printf "r sharppen enable is 0x%2x val is 0x%2x\n" $sharppen_enable $sharppen_val;
 }
 
 write_sharppen()
 {
-    printf "sharppen not supported yet\n";
+    local sharppen_enable=0;
+    local sharppen_val=0;
+	local res=0;
+
+	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x10 0xD9 );
+	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x11 0x5D );
+	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x12 $PARAM1);
+	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x13 0x00 );
+    
+    sharppen_val=$(($PARAM2<<4|0x3));
+    res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x10 0xD9 );
+	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x11 0x52 );
+	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x12 $sharppen_val);
+	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x13 0x00 );
+	printf "w sharppen enable is 0x%2x val is 0x%2x \n" $PARAM1 $PARAM2;
 }
 
 read_aespeed()
@@ -589,6 +628,93 @@ write_contrast()
 	printf "w contrast is 0x%2x\n" $PARAM1;
 }
 
+read_lsc_slop()
+{
+    local slop=0;
+	local res=0;
+    res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x10 0x59 );
+	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x11 0x93 );
+	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x13 0x1 );
+    sleep 0.01;
+	res=$(./i2c_read $I2C_DEV $I2C_ADDR  0x14 );
+    slop=$?;
+    printf "r LSC slop is %02x\n" $slop;
+}
+write_lsc_slop()
+{
+    local res=0;
+    res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x10 0x59 );
+	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x11 0x93 );
+	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x12 $PARAM1);
+	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x13 0x00 );
+    
+    res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x10 0x59 );
+	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x11 0x90 );
+	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x12 $PARAM1);
+	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x13 0x00 );
+    printf "w LSC slop %02x\n" $PARAM1;
+}
+
+read_lsc()
+{
+	local enable=0;
+    local strength=0;
+	local res=0;
+    res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x10 0xDA );
+	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x11 0x77 );
+	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x13 0x1 );
+    sleep 0.01;
+	res=$(./i2c_read $I2C_DEV $I2C_ADDR  0x14 );
+	enable=$?;
+    
+    res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x10 0xDA );
+	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x11 0x6A );
+	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x13 0x1 );
+    sleep 0.01;
+	res=$(./i2c_read $I2C_DEV $I2C_ADDR  0x14 );
+	strength=$?;
+	printf "r LSC enable is 0x%2x and strength %02x \n" $enable $strength $slop;
+}
+write_lsc()
+{
+	local res=0;
+	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x10 0xDA );
+	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x11 0x77 );
+	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x12 $PARAM1);
+	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x13 0x00 );
+	
+    res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x10 0xDA );
+	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x11 0x6A );
+	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x12 $PARAM2);
+	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x13 0x00 );
+    
+    res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x10 0xDA );
+	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x11 0x6B );
+	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x12 $PARAM2);
+	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x13 0x00 );
+    
+    res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x10 0xDA );
+	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x11 0x68 );
+	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x12 $PARAM2);
+	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x13 0x00 );
+
+    res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x10 0xDA );
+	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x11 0x69 );
+	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x12 $PARAM2);
+	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x13 0x00 );
+    
+    res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x10 0xDA );
+	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x11 0x6E );
+	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x12 $PARAM2);
+	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x13 0x00 );
+    
+    res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x10 0xDA );
+	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x11 0x6F );
+	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x12 $PARAM2);
+	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x13 0x00 );
+    printf "w LSC enable is 0x%2x and strength %02x \n" $PARAM1 $PARAM2;
+}
+
 #######################Action# BEGIN##############################
 
 pinmux;
@@ -662,10 +788,15 @@ if [ ${MODE} = "read" ] ; then
         "sharppen")
             read_sharppen;
             ;;
-	"wdrtargetbr")
+        "wdrtargetbr")
 			read_wdrtargetbr;
 			;;
-
+        "lsc")
+			read_lsc;
+			;;
+        "lsc_slop")
+			read_lsc_slop;
+			;;
 	esac
 fi
 
@@ -741,8 +872,11 @@ if [ ${MODE} = "write" ] ; then
         "sharppen")
             write_sharppen;
             ;;
-        "wdrtargetbr")
-			write_wdrtargetbr;
+        "lsc")
+			write_lsc;
+			;;
+        "lsc_slop")
+			write_lsc_slop;
 			;;
 	esac
 fi
