@@ -33,7 +33,6 @@ FPDLINK_PORT=0;
 
 print_usage()
 {
-    echo "this shell scripts should be used for CS-MIPI-IMX307!"
 	echo "Usage:  ./fpdlink3_i2c.sh [-f] function name -b bus -p port -p1 param1 -p2 param2 -p3 param3 "
 	echo "options:"
 	echo "    -f [function name]       function name"
@@ -246,6 +245,51 @@ backward_port1_init()
     # pull up
     #i2cset -y $I2C_DEV $DES_ID 0xBE 0x3F
 }
+## init backward channel, des gpio 0 to port 0 ses gpio 0
+backward_port0_pin0_init()
+{
+    # select port 0
+    i2cset -y $I2C_DEV $DES_ID 0x4c 0x01 
+    i2cset -y $I2C_DEV $DES_ID 0x58 0x5e 
+
+    ## set ser chip io 0 1 output
+    i2cset -y $I2C_DEV $SER_ID 0x0E 0x10
+    i2cset -y $I2C_DEV $SER_ID 0x0D 0x10
+    
+    ## 
+    i2cset -y $I2C_DEV $SER_ID 0x33 0x00
+    
+    #gpio0 input connect to port0 gpio 0
+    i2cset -y $I2C_DEV $DES_ID 0x6E 0x00
+    ## control the io using i2c cmd
+    #i2cset -y $I2C_DEV $DES_ID 0x6E 0x88
+    #i2cset -y $I2C_DEV $DES_ID 0x6E 0x99
+    ## set des chip io 0 1 
+    #io 0 1 set to input
+    i2cset -y $I2C_DEV $DES_ID 0x0F 0x0F
+    # pull up
+    #i2cset -y $I2C_DEV $DES_ID 0xBE 0x3F
+}
+
+## init backward channel, des gpio 2  to port 1 ses gpio 0
+backward_port1_pin0_init()
+{
+    # select port 1
+    i2cset -y $I2C_DEV $DES_ID 0x4c 0x12 
+    i2cset -y $I2C_DEV $DES_ID 0x58 0x5e 
+
+    ## set ser chip io 0 1 output
+    i2cset -y $I2C_DEV $SER_ID 0x0E 0x10
+    i2cset -y $I2C_DEV $SER_ID 0x0D 0x10 
+
+    #gpio2  input connect to port1,gpio 0
+    i2cset -y $I2C_DEV $DES_ID 0x6E 0x02
+    ## set des chip io 0 1 
+    #io 2 3 set to input
+    i2cset -y $I2C_DEV $DES_ID 0x0F 0x0F
+    # pull up
+    #i2cset -y $I2C_DEV $DES_ID 0xBE 0x3F
+}
 write_sync_init()
 {
     printf "usage: p1, role,0 is master,1 is slave\n"
@@ -273,10 +317,10 @@ write_sync_init()
 write_trigger_init()
 {
     if [ $FPDLINK_PORT -eq 1 ] ; then
-        backward_port1_init;
+        backward_port1_pin0_init;
         printf "init fpdlink trigger mode port %d  \n" $FPDLINK_PORT;
     else
-        backward_port0_init;
+        backward_port0_pin0_init;
         printf "init fpdlink trigger mode port %d  \n" $FPDLINK_PORT;
     fi
 }
