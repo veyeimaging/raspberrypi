@@ -1028,7 +1028,7 @@ int main(int argc, const char **argv)
    // Camera is different in stills/video, but preview
    // is the same so handed off to a separate module
    fprintf(stderr, "before create camera com sensor mode %d\n",state.veye_camera_isp_state.sensor_mode);
-
+   state.veye_camera_isp_state.rpi_crop.crop_enable = 0;
   if ((status = create_veye_camera_isp_component(&state.veye_camera_isp_state,state.cameraNum)) != MMAL_SUCCESS)
    {
       vcos_log_error("%s: Failed to create camera component", __func__);
@@ -1117,7 +1117,7 @@ int main(int argc, const char **argv)
          FILE *output_file = NULL;
          char *use_filename = NULL;      // Temporary filename while image being written
          char *final_filename = NULL;    // Name that file gets once writing complete
-	 
+	  frame = 0;
          while (keep_looping)
          {
 	      keep_looping = wait_for_next_frame(&state, &frame);
@@ -1141,7 +1141,7 @@ int main(int argc, const char **argv)
                      vcos_log_error("Unable to create filenames");
                      goto error;
                   }
-                //  if (state.verbose)
+                  if (state.verbose)
                      fprintf(stderr, "Opening output file %s\n", final_filename);
                      // Technically it is opening the temp~ filename which will be ranamed to the final filename
 
