@@ -178,38 +178,38 @@ write_rpi_init()
 
     printf "init fpdlink port %d \n" $FPDLINK_PORT;
 }
-## init for ward channel, port 0 ses gpio 0 1 to des gpio 0 1
-forward_port0_init()
+## init for ward channel, port 0 ses gpio 1 to des gpio 1
+forward_port0_pin1_init()
 {
     # select port 0
     i2cset -y $I2C_DEV $DES_ID 0x4c 0x01 
     i2cset -y $I2C_DEV $DES_ID 0x58 0x5e 
-    ## set ser chip io 0 1 input
+    ## set ser chip io  1 input
     i2cset -y $I2C_DEV $SER_ID 0x0D 0x00 
-    i2cset -y $I2C_DEV $SER_ID 0x0E 0x03
+    i2cset -y $I2C_DEV $SER_ID 0x0E 0x02
     ## forward 2 gpio chn 0 1
     i2cset -y $I2C_DEV $SER_ID 0x33 0x02
 
-    ## set des chip io 0 1 
-    #io 0 1 set to output
-    i2cset -y $I2C_DEV $DES_ID 0x0F 0x03
+    ## set des chip io  1 
+    #io  1 set to output
+    i2cset -y $I2C_DEV $DES_ID 0x0F 0x02
     # pull up
     i2cset -y $I2C_DEV $DES_ID 0xBE 0x3F
-    #gpio 0 1 output from sers 0 1
-    i2cset -y $I2C_DEV $DES_ID 0x10 0x01
+    #gpio  1 output from sers  1
+    #i2cset -y $I2C_DEV $DES_ID 0x10 0x01
     i2cset -y $I2C_DEV $DES_ID 0x11 0x21
 }
 
-## init backward channel, des gpio 0 1 to port 0 ses gpio 0 1
-backward_port0_init()
+## init backward channel, des gpio 1 to port 0 ses gpio 1
+backward_port0_pin1_init()
 {
     # select port 0
     i2cset -y $I2C_DEV $DES_ID 0x4c 0x01 
     i2cset -y $I2C_DEV $DES_ID 0x58 0x5e 
 
-    ## set ser chip io 0 1 output
-    i2cset -y $I2C_DEV $SER_ID 0x0E 0x30
-    i2cset -y $I2C_DEV $SER_ID 0x0D 0x30
+    ## set ser chip io  1 output
+    i2cset -y $I2C_DEV $SER_ID 0x0E 0x20
+    i2cset -y $I2C_DEV $SER_ID 0x0D 0x20
     
     ## 
     i2cset -y $I2C_DEV $SER_ID 0x33 0x00
@@ -226,21 +226,21 @@ backward_port0_init()
     #i2cset -y $I2C_DEV $DES_ID 0xBE 0x3F
 }
 
-## init backward channel, des gpio 3 4 to port 1 ses gpio 0 1
-backward_port1_init()
+## init backward channel, des gpio 4 to port 1 ses gpio 1
+backward_port1_pin1_init()
 {
     # select port 1
     i2cset -y $I2C_DEV $DES_ID 0x4c 0x12 
     i2cset -y $I2C_DEV $DES_ID 0x58 0x5e 
 
-    ## set ser chip io 0 1 output
-    i2cset -y $I2C_DEV $SER_ID 0x0E 0x30
-    i2cset -y $I2C_DEV $SER_ID 0x0D 0x30 
+    ## set ser chip io  1 output
+    i2cset -y $I2C_DEV $SER_ID 0x0E 0x20
+    i2cset -y $I2C_DEV $SER_ID 0x0D 0x20 
 
-    #gpio2 3 input connect to port1,gpio 0 1
-    i2cset -y $I2C_DEV $DES_ID 0x6E 0x32
-    ## set des chip io 0 1 
-    #io 2 3 set to input
+    #gpio 3 input connect to port1,gpio  1
+    i2cset -y $I2C_DEV $DES_ID 0x6E 0x30
+    ## set des chip io  1 
+    #io  3 set to input
     i2cset -y $I2C_DEV $DES_ID 0x0F 0x0F
     # pull up
     #i2cset -y $I2C_DEV $DES_ID 0xBE 0x3F
@@ -296,18 +296,18 @@ write_sync_init()
     
     if [ $FPDLINK_PORT -eq 1 ] ; then
         if [ $PARAM1 -eq 1 ] ; then
-            backward_port1_init;
+            backward_port1_pin1_init;
             printf "init fpdlink sync mode port %d role as SLAVE! \n" $FPDLINK_PORT;
         else
             printf "do not support use port %d as MASTER! \n" $FPDLINK_PORT;
         fi
     else
         if [ $PARAM1 -eq 1 ] ; then
-            backward_port0_init;
+            backward_port0_pin1_init;
             printf "init fpdlink sync mode port %d role as SLAVE! \n" $FPDLINK_PORT;
         else
-            forward_port0_init;
-            printf "init fpdlink sync mode port %d role as MASTER! \n" $FPDLINK_PORT;
+            forward_port0_pin1_init;
+            printf "init fpdlink sync mode port %d role as MASTER!\n" $FPDLINK_PORT;
         fi
     fi
     #gpio2 3 input connect to port0; 2 3 to port 2 3 
