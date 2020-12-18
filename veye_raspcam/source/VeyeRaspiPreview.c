@@ -111,7 +111,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 int mmal_status_to_int(MMAL_STATUS_T status);
 static void signal_handler(int signal_number);
-
+ 
 /** Structure containing all state information for the current run
  */
 typedef struct
@@ -735,6 +735,16 @@ int main(int argc, const char **argv)
    // is the same so handed off to a separate module
 //   state.veye_camera_isp_state.out_yuv_fmt = MMAL_ENCODING_NV12;
    fprintf(stderr, "before create camera com \n");
+   /*state.veye_camera_isp_state.rpi_crop.crop_enable = 1;
+   state.veye_camera_isp_state.rpi_crop.crop_x = 608;
+   state.veye_camera_isp_state.rpi_crop.crop_y = 0;
+   state.veye_camera_isp_state.rpi_crop.crop_width = 608;
+   state.veye_camera_isp_state.rpi_crop.crop_height = 1080;*/
+   /*state.veye_camera_isp_state.rpi_crop.crop_enable = 0;
+   state.veye_camera_isp_state.rpi_scale.scale_enable = 1;
+   state.veye_camera_isp_state.rpi_scale.scale_width = 640;
+   state.veye_camera_isp_state.rpi_scale.scale_height = 480;*/
+   state.veye_camera_isp_state.rpi_scale.scale_enable = 0;
    if ((status = create_veye_camera_isp_component(&state.veye_camera_isp_state,state.cameraNum)) != MMAL_SUCCESS)
    {
       vcos_log_error("%s: Failed to create camera component", __func__);
@@ -758,6 +768,44 @@ int main(int argc, const char **argv)
 			vcos_log_error("Failed to create rawcam->isp connection");
 			goto error;
 		}
+		#if 0
+		MMAL_ES_FORMAT_T *format;
+		MMAL_PORT_T *port = state.veye_camera_isp_state.isp_component->output[0];
+	    format = port->format;
+	   if(state.veye_camera_isp_state.rpi_crop.crop_enable)
+	    {
+	        format->es->video.crop.x = state.veye_camera_isp_state.rpi_crop.crop_x;
+	        format->es->video.crop.y = state.veye_camera_isp_state.rpi_crop.crop_y;
+	        format->es->video.crop.width = state.veye_camera_isp_state.rpi_crop.crop_width;
+	        format->es->video.crop.height = state.veye_camera_isp_state.rpi_crop.crop_height;
+	        
+	    }
+	    else
+	    {
+	        format->es->video.crop.width = state.veye_camera_isp_state.width;
+	        format->es->video.crop.height = state.veye_camera_isp_state.height;
+	    }
+	  //  vcos_log_error("mmal_component_enable isp  crop x %d w %d h %d \n",format->es->video.crop.x,format->es->video.crop.width,format->es->video.crop.height);
+		if (format->es->video.crop.width > 1920)
+		{
+			//Display can only go up to a certain resolution before underflowing
+			format->es->video.crop.width /= 2;
+			format->es->video.crop.height /= 2;
+		}
+		//format->es->video.width = VCOS_ALIGN_UP(format->es->video.crop.width, 16);
+		//format->es->video.height = VCOS_ALIGN_UP(format->es->video.crop.height, state->height_align );
+	    format->es->video.width = 1920;
+		format->es->video.height = 1080;
+	    format->es->video.frame_rate.num = state.veye_camera_isp_state.framerate;
+	    format->es->video.frame_rate.den = 30;
+		format->encoding = state.veye_camera_isp_state.out_yuv_fmt;
+		status = mmal_port_format_commit(port);
+		if (status != MMAL_SUCCESS)
+		{
+			vcos_log_error("Failed to commit port format on isp output");
+			goto error;
+		}
+		#endif
 	      // Connect camera to preview (which might be a null_sink if no preview required)
 	    	 status = connect_ports( state.veye_camera_isp_state.isp_component->output[0], state.preview_parameters.preview_component->input[0], &state.preview_connection);
 	 	if (status != MMAL_SUCCESS)

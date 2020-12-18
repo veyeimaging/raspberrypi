@@ -2,6 +2,22 @@
 #ifndef VEYECAMERAISP_H_
 #define VEYECAMERAISP_H_
 
+typedef struct
+{
+   int crop_enable;
+   //crop paramters 
+   int crop_x;
+   int crop_y;
+   int crop_width;
+   int crop_height;
+}VEYE_RPI_CROP;
+
+typedef struct
+{
+   int scale_enable;
+   int scale_width;
+   int scale_height;
+}VEYE_RPI_SCALE;
 
 typedef struct
 {
@@ -21,6 +37,9 @@ typedef struct
 	int height;         //  use to replace sensor_mode
 	int framerate;       //frame rate
 	MMAL_FOURCC_T out_yuv_fmt; //MMAL_ENCODING_I420 default
+
+	VEYE_RPI_CROP rpi_crop;
+	VEYE_RPI_SCALE rpi_scale;
 } VEYE_CAMERA_ISP_STATE;
 
 void veye_camera_isp_set_defaults(VEYE_CAMERA_ISP_STATE *state);

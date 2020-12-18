@@ -1029,6 +1029,7 @@ int main(int argc, const char **argv)
    // is the same so handed off to a separate module
    fprintf(stderr, "before create camera com sensor mode %d\n",state.veye_camera_isp_state.sensor_mode);
    state.veye_camera_isp_state.rpi_crop.crop_enable = 0;
+   state.veye_camera_isp_state.rpi_scale.scale_enable = 0;
   if ((status = create_veye_camera_isp_component(&state.veye_camera_isp_state,state.cameraNum)) != MMAL_SUCCESS)
    {
       vcos_log_error("%s: Failed to create camera component", __func__);

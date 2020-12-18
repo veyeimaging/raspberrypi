@@ -1157,6 +1157,8 @@ int main(int argc, const char **argv)
 
    // OK, we have a nice set of parameters. Now set up our components
    // We have two components. Camera, Preview
+   state.veye_camera_isp_state.rpi_crop.crop_enable = 0;
+   state.veye_camera_isp_state.rpi_scale.scale_enable = 0;
    if ((status = create_veye_camera_isp_component(&state.veye_camera_isp_state,state.cameraNum)) != MMAL_SUCCESS)
    {
       vcos_log_error("%s: Failed to create camera component", __func__);
