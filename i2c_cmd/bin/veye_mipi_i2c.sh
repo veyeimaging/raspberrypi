@@ -61,6 +61,10 @@ do
 		b_arg_bus=0;
 		I2C_DEV=$arg;
 	fi
+    if [ $b_arg_addr -eq 1 ] ; then
+		b_arg_addr=0;
+		I2C_ADDR=$arg;
+	fi
 	case $arg in
 		"-r")
 			MODE=read;
@@ -82,6 +86,9 @@ do
 			;;
 		"-b")
 			b_arg_bus=1;
+			;;
+        "-d")
+			b_arg_addr=1;
 			;;
 		"-h")
 			print_usage;
@@ -873,6 +880,9 @@ if [ ${MODE} = "write" ] ; then
         "sharppen")
             write_sharppen;
             ;;
+	"wdrtargetbr")
+		write_wdrtargetbr;
+			;;
         "lsc")
 			write_lsc;
 			;;
