@@ -33,6 +33,7 @@ b_arg_param2=0;
 b_arg_param3=0;
 b_arg_functin=0;
 b_arg_bus=0;
+b_arg_addr=0;
 
 for arg in $@
 do

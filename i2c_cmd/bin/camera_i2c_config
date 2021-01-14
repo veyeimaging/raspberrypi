@@ -7,6 +7,7 @@
 # http://elinux.org/RPi_HardwareHistory#Board_Revision_History
 rev=`cat /proc/cpuinfo | grep Revision | awk '{print substr($NF,length($NF)-5,6)}'`
 echo "setting GPIO for board revsion: $rev"
+kernel=`uname -r  | head --bytes 1`
 
 camnum=$1
 
@@ -122,8 +123,26 @@ gpio -g mode 45 alt1
 #gpio -g write 32 1
 i2cdetect -y 0
 ;;
+'b03140')
+echo "Compute Module/ CM4"
+echo "Download dt-blob.bin from https://www.raspberrypi.org/documentation/hardware/computemodule/dt-blob-dualcam.bin rename it to dt-blob.bin and place it in /boot/."
+gpio -g mode 28 in
+gpio -g mode 29 in
+gpio -g mode 44 in
+gpio -g mode 44 alt2
+gpio -g mode 45 in
+gpio -g mode 45 alt2
+echo "use /dev/i2c0 for CAM 0;/dev/i2c11 for CAM 1"
 
+;;
 *)
 echo "Failed: don't know how to set GPIO for this board!"
 ;;
 esac
+
+if [ "$kernel" = "4" ]
+then
+	echo "Use i2c-0 for the sensor (-y 0)"
+else
+	echo "Use i2c-10 for the sensor (-y 10)"
+fi
