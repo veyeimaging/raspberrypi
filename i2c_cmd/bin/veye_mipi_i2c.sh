@@ -19,7 +19,7 @@ print_usage()
 	echo "    -p2 [param1] 			   param2 of each function"
 	echo "    -b [i2c bus num] 		   i2c bus number"
 	echo "support functions: devid,hdver,wdrmode,videoformat,mirrormode,denoise,agc,lowlight,daynightmode,ircutdir,irtrigger£¬mshutter"
-    echo "cameramode, notf, capture, csienable,saturation,wdrbtargetbr,wdrtargetbr, brightness ,contrast , sharppen, aespeed,lsc"
+    echo "cameramode, nodf, capture, csienable,saturation,wdrbtargetbr,wdrtargetbr, brightness ,contrast , sharppen, aespeed,lsc"
 }
 
 ######################parse arg###################################
@@ -371,7 +371,7 @@ read_nodf()
 	local res=0;
 	res=$(./i2c_read $I2C_DEV $I2C_ADDR  0x1B );
 	nodf=$?;
-	printf "r nodf is 0x%2x\n" $notf;
+	printf "r nodf is 0x%2x\n" $nodf;
 }
 
 write_nodf()
