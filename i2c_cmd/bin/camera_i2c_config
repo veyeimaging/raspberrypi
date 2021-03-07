@@ -100,7 +100,7 @@ if [ $camnum -eq 1 ]; then
 fi
 ;;
 
-'a02082'|'a22082'|'a020d3'|'9020e0'|'a03111'|'b03111'|'c03111'|'a03112'|'b03112'|'c03112'|'d03114')
+'a02082'|'a22082'|'a020d3'|'9020e0'|'a03111'|'b03111'|'c03111'|'a03112'|'b03112'|'b03114'|'c03112'|'d03114')
 echo "Raspberry Pi3B / Pi3B+ / 3A / 4B(1G/2G/4G/8G)"
 # https://www.raspberrypi.org/forums/viewtopic.php?f=38&t=120702&start=100
 # "Direct i2c0 to GPIO44&45."
