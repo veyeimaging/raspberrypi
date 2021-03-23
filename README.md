@@ -12,8 +12,8 @@ Video Stream Tookkits provides real-time display, capture, video recording, etc.
 Video Control Toolkits is a shell script which provides ISP parameters configuration capbility.
 Both is Open Source.
 
-# FAQ system
-[ask.veye.cc](http://ask.veye.cc)
+# Forum system
+[forum.veye.cc](http://forum.veye.cc)
 
 
 
