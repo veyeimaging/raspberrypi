@@ -177,6 +177,8 @@ typedef enum {
 } ZOOM_COMMAND_T;
 
 
+void raspicamcontrol_poweon(int camera_num);
+
 void raspicamcontrol_check_configuration(int min_gpu_mem);
 
 int raspicamcontrol_parse_cmdline(RASPICAM_CAMERA_PARAMETERS *params, const char *arg1, const char *arg2);

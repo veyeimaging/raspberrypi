@@ -729,6 +729,8 @@ int main(int argc, const char **argv)
       dump_status(&state);
    }
 
+    raspicamcontrol_poweon(state.cameraNum);
+
    // OK, we have a nice set of parameters. Now set up our components
    // We have two components. Camera and Preview
    // Camera is different in stills/video, but preview

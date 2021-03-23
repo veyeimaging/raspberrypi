@@ -1394,8 +1394,6 @@ int main(int argc, const char **argv)
       exit(EX_USAGE);
    }
 
-   default_status(&state);
-
    // Parse the command line and put options in to our status structure
    if (parse_cmdline(argc, argv, &state))
    {
@@ -1408,7 +1406,7 @@ int main(int argc, const char **argv)
       fprintf(stderr, "\n%s Camera App %s\n\n", basename((char*)argv[0]), VERSION_STRING);
       dump_status(&state);
    }
-
+    raspicamcontrol_poweon(state.cameraNum);
    // OK, we have a nice set of parameters. Now set up our components
    // We have three components. Camera, Preview and encoder.
    // Camera and encoder are different in stills/video, but preview

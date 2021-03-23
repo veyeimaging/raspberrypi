@@ -1154,7 +1154,7 @@ int main(int argc, const char **argv)
       fprintf(stderr, "\n%s Camera App %s\n\n", basename((char*)argv[0]), VERSION_STRING);
       dump_status(&state);
    }
-
+    raspicamcontrol_poweon(state.cameraNum);
    // OK, we have a nice set of parameters. Now set up our components
    // We have two components. Camera, Preview
    state.veye_camera_isp_state.rpi_crop.crop_enable = 0;
