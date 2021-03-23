@@ -6,9 +6,9 @@
 
 # http://elinux.org/RPi_HardwareHistory#Board_Revision_History
 rev=`cat /proc/cpuinfo | grep Revision | awk '{print substr($NF,length($NF)-5,6)}'`
-echo "setting GPIO for board revsion: $rev"
-kernel=`uname -r  | head --bytes 1`
 
+kernel=`uname -r  | head --bytes 1`
+echo "setting GPIO for board revsion: $rev kernel ver:$kernel"
 camnum=$1
 
 case $rev in
@@ -115,13 +115,11 @@ gpio -g mode 44 in
 gpio -g mode 44 alt1
 gpio -g mode 45 in
 gpio -g mode 45 alt1
-#shutdown
+#reset pin control
 # you need this one: https://github.com/6by9/rpi3-gpiovirtbuf
-#gpio -g write 41 1
-#./rpi3-gpiovirtbuf s 133 1
+`dirname $0`/rpi3-gpiovirtbuf s 133 1
 #LED
 #gpio -g write 32 1
-i2cdetect -y 0
 ;;
 'b03140')
 echo "Compute Module/ CM4"
@@ -132,6 +130,7 @@ gpio -g mode 44 in
 gpio -g mode 44 alt2
 gpio -g mode 45 in
 gpio -g mode 45 alt2
+`dirname $0`/rpi3-gpiovirtbuf s 133 1
 echo "use /dev/i2c0 for CAM 0;/dev/i2c11 for CAM 1"
 
 ;;
