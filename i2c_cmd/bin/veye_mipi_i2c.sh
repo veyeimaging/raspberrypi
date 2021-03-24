@@ -19,7 +19,7 @@ print_usage()
 	echo "    -p2 [param1] 			   param2 of each function"
 	echo "    -b [i2c bus num] 		   i2c bus number"
 	echo "support functions: devid,hdver,wdrmode,videoformat,mirrormode,denoise,agc,lowlight,daynightmode,ircutdir,irtrigger£¬mshutter"
-    echo "cameramode, nodf, capture, csienable,saturation,wdrbtargetbr,wdrtargetbr, brightness ,contrast , sharppen, aespeed,lsc"
+    echo "cameramode, nodf, capture, csienable,saturation,wdrbtargetbr,wdrtargetbr, brightness ,contrast , sharppen, aespeed,lsc,boardmodel,yuvseq,i2cauxenable,i2cwen"
 }
 
 ######################parse arg###################################
@@ -407,6 +407,76 @@ write_csienable()
 	printf "w csienable is 0x%2x\n" $PARAM1;
 }
 
+read_board_model()
+{
+    local board_model=0;
+	local res=0;
+	res=$(./i2c_read $I2C_DEV $I2C_ADDR 0x25);
+	board_model=$?;
+     if [ $board_model -eq 255 ] ; then
+		printf "Board model is VEYE-MIPI-327 \n";
+	elif [ $board_model -eq 76 ] ; then
+		printf "Board model is VEYE-MIPI-IMX327S\n";
+	fi
+}
+
+read_i2c_aux_enable()
+{
+    local i2c_aux_enable=0;
+	local res=0;
+	res=$(./i2c_read $I2C_DEV $I2C_ADDR 0x1F);
+	i2c_aux_enable=$?;
+	if [ $board_model -eq 238 ] ; then
+		printf "i2c aux is enable \n";
+	else
+		printf "i2c aux is disable\n";
+	fi
+}
+
+write_i2c_aux_enable()
+{
+    local i2c_aux_enable=0;
+	local res=0;
+    if [ $PARAM1 -eq 0 ] ; then
+        i2c_aux_enable=0x11;
+    else
+		i2c_aux_enable=0xEE;
+	fi
+	res=$(./i2c_write $I2C_DEV $I2C_ADDR 0x1F $i2c_aux_enable);
+    sleep 0.01;
+    res=$(./i2c_write $I2C_DEV $I2C_ADDR 0x1F $i2c_aux_enable);
+	printf "w i2c_aux_enable is 0x%2x\n" $PARAM1;
+}
+
+read_i2c_write_enable()
+{
+    local i2cwenable=0;
+	local res=0;
+	res=$(./i2c_read $I2C_DEV $I2C_ADDR 0x24);
+	i2cwenable=$?;
+    if [ $i2cwenable -eq 238 ] ; then
+        printf "r i2c write enable\n";
+    else
+		printf "r i2c write disable\n";
+	fi
+	
+}
+
+write_i2c_write_enable()
+{
+    local i2c_write_enable=0;
+	local res=0;
+    if [ $PARAM1 -eq 0 ] ; then
+        i2c_write_enable=0x11;
+    else
+		i2c_write_enable=0xEE;
+	fi
+
+	res=$(./i2c_write $I2C_DEV $I2C_ADDR 0x24 $i2c_write_enable);
+    sleep 0.01;
+    res=$(./i2c_write $I2C_DEV $I2C_ADDR 0x24 $i2c_write_enable);
+	printf "w i2c_write_enable is 0x%2x\n" $PARAM1;
+}
 
 read_saturation()
 {
@@ -806,6 +876,15 @@ if [ ${MODE} = "read" ] ; then
         "lsc_slop")
 			read_lsc_slop;
 			;;
+        "boardmodel")
+			read_board_model;
+			;;
+        "i2cauxenable")
+			read_i2c_aux_enable;
+			;;
+        "i2cwen")
+			read_i2c_write_enable;
+			;;
 	esac
 fi
 
@@ -889,6 +968,12 @@ if [ ${MODE} = "write" ] ; then
 			;;
         "lsc_slop")
 			write_lsc_slop;
+			;;
+        "i2cauxenable")
+			write_i2c_aux_enable;
+			;;
+        "i2cwen")
+			write_i2c_write_enable;
 			;;
 	esac
 fi
