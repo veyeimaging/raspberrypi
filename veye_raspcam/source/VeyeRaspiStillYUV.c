@@ -623,14 +623,14 @@ static void camera_buffer_callback(MMAL_PORT_T *port, MMAL_BUFFER_HEADER_T *buff
       if (buffer->length && bytes_written != bytes_to_write)
       {
          vcos_log_error("Unable to write buffer to file - aborting %d vs %d", bytes_written, bytes_to_write);
-         //complete = 1;
+         complete = 1;
       }
 
       // Check end of frame or error
-     // if (buffer->flags & (MMAL_BUFFER_HEADER_FLAG_FRAME_END | MMAL_BUFFER_HEADER_FLAG_TRANSMISSION_FAILED))
-     //    complete = 1;
-      if(buffer->length && bytes_written == bytes_to_write)
-	  complete = 1;
+     if (buffer->flags & (MMAL_BUFFER_HEADER_FLAG_FRAME_END | MMAL_BUFFER_HEADER_FLAG_TRANSMISSION_FAILED))
+         complete = 1;
+     // if(buffer->length && bytes_written == bytes_to_write)
+	//  complete = 1;
    }
   /* else
    {
