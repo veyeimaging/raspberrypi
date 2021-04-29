@@ -408,6 +408,32 @@ write_csienable()
 	printf "w csienable is 0x%2x\n" $PARAM1;
 }
 
+read_yuvseq()
+{
+	local yuvseq=0;
+	local res=0;
+	res=$(./i2c_read $I2C_DEV $I2C_ADDR 0x1E );
+	yuvseq=$?;
+    if [ $yuvseq -eq 1 ] ; then
+		printf "r YUVseq is YUYV\n";
+    else
+        printf "r YUVseq is UYVY\n";
+	fi
+}
+
+write_yuvseq()
+{
+	local csienable=0;
+	local res=0;
+	res=$(./i2c_write $I2C_DEV $I2C_ADDR 0x1E $PARAM1);
+    if [ $PARAM1 = "YUYV" ] ; then
+		res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x1E 0x1);
+    else
+        res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x1E 0x0);
+	fi
+	printf "w YUVseq is %s\n" $PARAM1;
+}
+
 read_board_model()
 {
     local board_model=0;
@@ -970,7 +996,7 @@ if [ ${MODE} = "read" ] ; then
         "i2cwen")
 			read_i2c_write_enable;
 			;;
-	"awbgain")
+        "awbgain")
 			read_awbgain;
 			;;
         "wbmode")
@@ -979,6 +1005,9 @@ if [ ${MODE} = "read" ] ; then
         "mwbgain")
 			read_mwbgain;
 			;;
+        "yuvseq")
+            read_yuvseq;
+                ;;
 	esac
 fi
 
@@ -1069,14 +1098,17 @@ if [ ${MODE} = "write" ] ; then
         "i2cwen")
 			write_i2c_write_enable;
 			;;
-	"wbmode")
+        "wbmode")
 			write_wbmode;
 			;;
         "mwbgain")
 			write_mwbgain;
 			;;
         "awbexpt")
-            		write_awbexpt;
-            		;;
+                write_awbexpt;
+                ;;
+        "yuvseq")
+            write_yuvseq;
+                ;;
 	esac
 fi

@@ -1422,6 +1422,33 @@ write_i2c_write_enable()
     res=$(./i2c_write $I2C_DEV $I2C_ADDR $I2CWEn $i2c_write_enable);
 	printf "w i2c_write_enable is 0x%2x\n" $PARAM1;
 }
+
+read_yuvseq()
+{
+	local yuvseq=0;
+	local res=0;
+	res=$(./i2c_read $I2C_DEV $I2C_ADDR $YUVSeq );
+	yuvseq=$?;
+    if [ $yuvseq -eq 1 ] ; then
+		printf "r YUVseq is YUYV\n";
+    else
+        printf "r YUVseq is UYVY\n";
+	fi
+}
+
+write_yuvseq()
+{
+	local csienable=0;
+	local res=0;
+	res=$(./i2c_write $I2C_DEV $I2C_ADDR $YUVSeq $PARAM1);
+    if [ $PARAM1 = "YUYV" ] ; then
+		res=$(./i2c_write $I2C_DEV $I2C_ADDR  $YUVSeq 0x1);
+    else
+        res=$(./i2c_write $I2C_DEV $I2C_ADDR  $YUVSeq 0x0);
+	fi
+	printf "w YUVseq is %s\n" $PARAM1;
+}
+
 #######################Action# BEGIN##############################
 
 pinmux;
@@ -1551,6 +1578,9 @@ if [ ${MODE} = "read" ] ; then
         "i2cwen")
 			read_i2c_write_enable;
 			;;
+        "yuvseq")
+            read_yuvseq;
+                ;;
         *)
 			echo "NOT SUPPORTED!";
 			;;
@@ -1667,6 +1697,9 @@ if [ ${MODE} = "write" ] ; then
         "i2cwen")
 			write_i2c_write_enable;
 			;;
+        "yuvseq")
+            write_yuvseq;
+                ;;
         *)
 			echo "NOT SUPPORTED!";
 			;;
