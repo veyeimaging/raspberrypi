@@ -1831,6 +1831,13 @@ static const rpi_hw_t rpi_hw_info[] = {
         .desc = "Model 4B",
         .pFunc = write_virtual_gpio,
     },
+       // Model CM4
+    {
+        .hwver  = 0xb03140,
+        .powerEn = 133,
+        .desc = "Model CM4",
+        .pFunc = write_virtual_gpio,
+    },
 };
 const rpi_hw_t *rpi_hw_detect(void)
 {
@@ -1870,8 +1877,8 @@ const rpi_hw_t *rpi_hw_detect(void)
                 // Take out warranty and manufacturer bits
                 hwver &= ~(RPI_WARRANTY_MASK | RPI_MANUFACTURER_MASK);
                 rev &= ~(RPI_WARRANTY_MASK | RPI_MANUFACTURER_MASK);
-			
-                if (rev == hwver)
+                //almost all board use cam_gpio for reset
+               // if (rev == hwver)
                 {
                     result = &rpi_hw_info[i];
 

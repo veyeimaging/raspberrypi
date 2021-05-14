@@ -131,7 +131,7 @@ gpio -g mode 44 alt2
 gpio -g mode 45 in
 gpio -g mode 45 alt2
 `dirname $0`/rpi3-gpiovirtbuf s 133 1
-echo "use /dev/i2c0 for CAM 0;/dev/i2c11 for CAM 1"
+echo "use /dev/i2c0 for CAM 0;/dev/i2c10 for CAM 1"
 
 ;;
 *)
