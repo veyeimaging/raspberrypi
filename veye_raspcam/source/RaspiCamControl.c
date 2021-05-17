@@ -1899,6 +1899,7 @@ printf("%s\n",buffer);
 system(buffer);
 return 0;
 }
+
 int write_virtual_gpio(int gpio,int value){
     int fd;
   fd = open(RPI_FIRMWARE_DEV, O_NONBLOCK);
@@ -1930,13 +1931,14 @@ void raspicamcontrol_poweon(int camera_num)
 {
 
 	const rpi_hw_t *rpi_hw;
+    int ret = 0;
 	rpi_hw = rpi_hw_detect();
 	if(rpi_hw == NULL){
 		printf("please run camera_i2c_config first!\r\n");
 	}else{
-		int ret = rpi_hw->pFunc(rpi_hw->powerEn,0);
-    		usleep(1000);
-   		ret += rpi_hw->pFunc(rpi_hw->powerEn,1);
+		//int ret = rpi_hw->pFunc(rpi_hw->powerEn,0);
+    	//	usleep(1000);
+   		ret = rpi_hw->pFunc(rpi_hw->powerEn,1);
 		if(ret){
 			printf("camera poweren reset failed\r\n");
 		}
