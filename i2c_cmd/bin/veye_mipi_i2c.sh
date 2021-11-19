@@ -20,7 +20,7 @@ print_usage()
 	echo "    -b [i2c bus num] 		   i2c bus number"
 	echo "    -d [i2c addr] 		   i2c addr if not default 0x3b"
 	echo "support functions: devid,hdver,sensorid,wdrmode,videoformat,mirrormode,denoise,agc,lowlight,daynightmode,ircutdir,irtrigger£¬mshutter"
-    echo "cameramode, nodf, capture, csienable,saturation,wdrbtargetbr,wdrtargetbr, brightness ,contrast , sharppen, aespeed,lsc,boardmodel,yuvseq,i2cauxenable,i2cwen,awbgain,wbmode,mwbgain"
+    echo "cameramode, nodf, capture, csienable,saturation,wdrbtargetbr,wdrtargetbr, brightness ,contrast ,sharppen, aespeed,lsc,boardmodel,yuvseq,i2cauxenable,i2cwen,awbgain,wbmode,mwbgain,antiflicker"
 }
 
 ######################parse arg###################################
@@ -927,6 +927,34 @@ write_mwbgain()
 	printf "w mwb Rgain is 0x%2x Bgain is 0x%2x \n" $PARAM1 $PARAM2;
 }
 
+read_antiflicker()
+{
+    local antiflicker=0;
+	local res=0;
+    res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x10 0xDA );
+	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x11 0x1F );
+	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x13 0x01 );
+    sleep 0.01;
+	res=$(./i2c_read $I2C_DEV $I2C_ADDR  0x14 );
+	antiflicker=$(($?>>6));
+	printf "r antiflicker mode %x \n" $antiflicker ;
+}
+
+write_antiflicker()
+{
+    local res=0;
+    local antiflicker=0;
+    if [ $PARAM1 -eq 1 ] ; then
+		antiflicker=0x40;
+    else
+        antiflicker=0x0;
+	fi
+	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x10 0xDA );
+	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x11 0x1F );
+	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x12 $antiflicker);
+	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x13 0x00 );
+    printf "w antiflicker %x\n" $PARAM1;
+}
 #######################Action# BEGIN##############################
 
 pinmux;
@@ -1033,6 +1061,9 @@ if [ ${MODE} = "read" ] ; then
         "yuvseq")
             read_yuvseq;
                 ;;
+        "antiflicker")
+            read_antiflicker;
+                ;;
 	esac
 fi
 
@@ -1134,6 +1165,9 @@ if [ ${MODE} = "write" ] ; then
                 ;;
         "yuvseq")
             write_yuvseq;
+                ;;
+        "antiflicker")
+            write_antiflicker;
                 ;;
 	esac
 fi
