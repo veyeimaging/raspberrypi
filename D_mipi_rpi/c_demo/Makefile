@@ -5,7 +5,7 @@ CXX		:= $(CROSS_COMPILE)g++
 CFLAGS 	?= -I. -I../libdmipicam  -g -O0 -std=gnu11
 CXXFLAGS?= -I. -I../libdmipicam -g -std=gnu++11 `pkg-config --cflags --libs opencv`
 LDFLAGS	?=
-LIBS	:= -L ../libdmipicam/ -ldmipicam
+LIBS	:= -L../libdmipicam/ -L/opt/vc/lib/ -ldmipicam -lrt -lbcm_host -lvcos -lmmal_core -lmmal_util -lmmal_vc_client -lvcsm -lpthread 
 OLIB	:= ../libdmipicam
 examples:= preview capture capture_yuv video list_format yuv_stream  preview-dualcam capture-dualcam video2stdout capture2opencv qrcode_detection  
 %.o : %.c

@@ -746,6 +746,7 @@ int main(int argc, const char **argv)
    state.veye_camera_isp_state.rpi_scale.scale_enable = 1;
    state.veye_camera_isp_state.rpi_scale.scale_width = 640;
    state.veye_camera_isp_state.rpi_scale.scale_height = 480;*/
+   state.veye_camera_isp_state.rpi_crop.crop_enable = 0;
    state.veye_camera_isp_state.rpi_scale.scale_enable = 0;
    if ((status = create_veye_camera_isp_component(&state.veye_camera_isp_state,state.cameraNum)) != MMAL_SUCCESS)
    {

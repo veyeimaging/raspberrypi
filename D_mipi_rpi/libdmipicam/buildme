@@ -1,3 +1,10 @@
+
+gcc -I/opt/vc/include -pipe -W -Wall -Wextra -g -O0 -MD -c -o tga.o tga.c
+gcc -I/opt/vc/include -pipe -W -Wall -Wextra -g -O0 -MD -c -o RaspiCamControl.o RaspiCamControl.c
+gcc -I/opt/vc/include -pipe -W -Wall -Wextra -g -O0 -MD -c -o RaspiCLI.o RaspiCLI.c
+gcc -I/opt/vc/include -pipe -W -Wall -Wextra -g -O0 -MD -c -o RaspiPreview.o RaspiPreview.c
+gcc -I/opt/vc/include -pipe -W -Wall -Wextra -g -O0 -MD -c -o D_mipicam.o D_mipicam.c
+
 rm libdmipicam.so
 
-gcc -lmmal_core -lmmal_util -lmmal_vc_client -lvcos -lbcm_host -lbrcmGLESv2 -lbrcmEGL -lm  -pthread -I./ -I./gl_scenes -I/opt/vc/include/ -I/opt/vc/include/interface/vctypes/ -I/opt/vc/include/interface/vcsm -L/opt/vc/lib/ -L./ -shared -fPIC -o libdmipicam.so  D_mipicam.c tga.c RaspiCamControl.c RaspiCLI.c RaspiPreview.c libveyecam.a
+gcc -lrt -lbcm_host -lvcos -lmmal_core -lmmal_util -lmmal_vc_client -lvcsm -lpthread -L/opt/vc/lib/ -shared -fPIC -o libdmipicam.so  D_mipicam.o tga.o RaspiCamControl.o RaspiCLI.o RaspiPreview.o libveyecam.a
