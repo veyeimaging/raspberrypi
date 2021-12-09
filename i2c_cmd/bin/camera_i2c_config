@@ -108,8 +108,8 @@ echo "Raspberry Pi3B / Pi3B+ / 3A / 4B(1G/2G/4G/8G)"
 # i2c0 can be on pins 0 and 1, so make sure they are not set to alt0
 gpio -g mode 0 in
 gpio -g mode 1 in
-gpio -g mode 28 in
-gpio -g mode 29 in
+#gpio -g mode 28 in
+#gpio -g mode 29 in
 # i2c on these pins
 gpio -g mode 44 in
 gpio -g mode 44 alt1
