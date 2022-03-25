@@ -19,8 +19,8 @@ print_usage()
 	echo "    -p2 [param1] 			   param2 of each function"
 	echo "    -b [i2c bus num] 		   i2c bus number"
 	echo "    -d [i2c addr] 		   i2c addr if not default 0x3b"
-	echo "support functions: devid,hdver,sensorid,wdrmode,videoformat,mirrormode,denoise,agc,lowlight,daynightmode,ircutdir,irtrigger£¬mshutter"
-    echo "cameramode, nodf, capture, csienable,saturation,wdrbtargetbr,wdrtargetbr, brightness ,contrast ,sharppen, aespeed,lsc,boardmodel,yuvseq,i2cauxenable,i2cwen,awbgain,wbmode,mwbgain,antiflicker"
+	echo "support functions: devid,hdver,sensorid,wdrmode,videoformat,mirrormode,denoise,agc,lowlight,daynightmode,ircutdir,irtrigger£¬mshutter,curshutter"
+    echo "cameramode, nodf, capture, csienable,saturation,wdrbtargetbr,wdrtargetbr, brightness ,contrast , sharppen, aespeed,lsc,boardmodel,yuvseq,i2cauxenable,i2cwen,awbgain,wbmode,mwbgain,antiflicker,awb_boffset,paramsave"
 }
 
 ######################parse arg###################################
@@ -931,9 +931,9 @@ read_antiflicker()
 {
     local antiflicker=0;
 	local res=0;
-    res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x10 0xDA );
-	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x11 0x1F );
-	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x13 0x01 );
+    res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x10 0xDA);
+	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x11 0x1F);
+	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x13 0x01);
     sleep 0.01;
 	res=$(./i2c_read $I2C_DEV $I2C_ADDR  0x14 );
 	antiflicker=$(($?>>6));
@@ -955,10 +955,33 @@ write_antiflicker()
 	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x13 0x00 );
     printf "w antiflicker %x\n" $PARAM1;
 }
+read_defog()
+{
+    local defog=0;
+	local res=0;
+    res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x10 0xD9);
+	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x11 0x2F);
+	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x13 0x01);
+    sleep 0.01;
+	res=$(./i2c_read $I2C_DEV $I2C_ADDR  0x14 );
+	defog=$?;
+	printf "r defog enable %x \n" $defog ;
+}
+
+write_defog()
+{
+    local res=0;
+	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x10 0xD9 );
+	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x11 0x2F );
+	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x12 $PARAM1);
+	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x13 0x00 );
+    printf "w defog %x\n" $PARAM1;
+}
+
 #######################Action# BEGIN##############################
 
 pinmux;
-./i2c_write $I2C_DEV $I2C_ADDR  0x07 0xFE&> /dev/null;
+./i2c_write $I2C_DEV $I2C_ADDR  0x07 0xFE>/dev/null 2>&1
 
 if [ ${MODE} = "read" ] ; then
 	case $FUNCTION in
@@ -1063,6 +1086,9 @@ if [ ${MODE} = "read" ] ; then
                 ;;
         "antiflicker")
             read_antiflicker;
+                ;;
+        "defog")
+            read_defog;
                 ;;
 	esac
 fi
@@ -1169,5 +1195,9 @@ if [ ${MODE} = "write" ] ; then
         "antiflicker")
             write_antiflicker;
                 ;;
+        "defog")
+            write_defog;
+                ;;
 	esac
+    sleep 0.1;
 fi
