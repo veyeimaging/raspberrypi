@@ -1182,7 +1182,7 @@ read_new_mshutter()
     
     reg_val=$((($reg_h<<8)+$reg_l));
     mshutter=`echo $reg_val $time_1h | awk '{printf "%d\n",$1*$2}'`
-    printf "r new mshutter is %d us regval %d\n" $mshutter $reg_val;
+    printf "r new mshutter is %d\n" $mshutter;
 }
 
 write_new_mshutter()
@@ -1208,6 +1208,10 @@ write_new_mshutter()
     mshutter=$PARAM1;
     #reg_val=$(($mshutter/$time_1h));
     reg_val=`echo $mshutter $time_1h | awk '{printf "%d\n",$1/$2}'`
+    if [ $reg_val -gt 65535 ] ; then
+        reg_val=65535;
+        printf "mshutter time too long,will cut it!\n";
+    fi
     reg_h=$(($reg_val>>8));
     reg_l=$(($reg_val&0xFF));
     res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x10 0xDA );
@@ -1219,7 +1223,7 @@ write_new_mshutter()
 	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x11 0x1D );
 	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x12 $reg_l);
 	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x13 0x00 );
-    printf "w new_mshutter %d us regval %d\n" $mshutter $reg_val;
+    printf "w new_mshutter %d us\n" $mshutter;
 }
 
 read_new_mgain()
@@ -1257,7 +1261,7 @@ read_new_mgain()
     reg_val=$((($reg_h<<8)+$reg_l));
     #mgain=$(($reg_val*$gainstep));
     mgain=`echo $reg_val $gainstep | awk '{printf "%.1f\n",$1*$2}'`
-    printf "r new mgain reg %d, %.1f dB\n" $reg_val $mgain;
+    printf "r new mgain %.1f dB\n" $mgain;
 }
 
 write_new_mgain()
@@ -1293,7 +1297,7 @@ write_new_mgain()
 	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x12 $reg_l);
 	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x13 0x00 );
     
-    printf "w new mgain %.1f dB regh %x regl %x\n" $mgain $reg_h $reg_l;
+    printf "w new mgain %.1f dB\n" $mgain;
 }
 
 #######################Action# BEGIN##############################
