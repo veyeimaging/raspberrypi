@@ -20,7 +20,7 @@ COMMENT_SAMPLE
 #   ALIAS ADDR (8BIT)             NA                                0x32                     0x76(VEYE CAMERA)
 #
 #
-I2C_DEV=0;
+I2C_DEV=10;
 
 SER_ID=0x19;
 SER_ALAIS_ID=0x32;
