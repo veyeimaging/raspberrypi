@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import D_mipicamera as Dcam
 import time
 import cv2 #sudo apt-get install python-opencv
@@ -8,15 +10,18 @@ def align_down(size, align):
 def align_up(size, align):
     return align_down(size + align - 1, align)
 
+WIDTH = 1280
+HEIGHT = 720
+
 if __name__ == "__main__":
     try:
         camera = Dcam.mipi_camera()
         print("Open camera...")
-        camera.init_camera()
+        camera.init_camera(format_=(WIDTH, HEIGHT, 30))
         while cv2.waitKey(10) != 27:
             frame = camera.capture(encoding = 'i420')
-            height = int(align_up(1080, 16))
-            width = int(align_up(1920, 32))
+            height = int(align_up(HEIGHT, 16))
+            width = int(align_up(WIDTH, 32))
             image = frame.as_array.reshape(int(height * 1.5), width)
             image = cv2.cvtColor(image, cv2.COLOR_YUV2BGR_I420)
             cv2.imshow("D-Cam", image)
