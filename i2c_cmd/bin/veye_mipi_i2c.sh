@@ -19,8 +19,8 @@ print_usage()
 	echo "    -p2 [param1] 			   param2 of each function"
 	echo "    -b [i2c bus num] 		   i2c bus number"
 	echo "    -d [i2c addr] 		   i2c addr if not default 0x3b"
-	echo "support functions: devid,hdver,sensorid,wdrmode,videoformat,mirrormode,denoise,agc,lowlight,daynightmode,ircutdir,irtrigger£¬mshutter,curshutter"
-    echo "cameramode, nodf, capture, csienable,saturation,wdrbtargetbr,wdrtargetbr, brightness ,contrast , sharppen,wdrsharppen aespeed,lsc,boardmodel,yuvseq,i2cauxenable,i2cwen,awbgain,wbmode,mwbgain,antiflicker,awb_boffset,blcstrength,blcpos,paramsave"
+	echo "support functions: devid,hdver,sensorid,wdrmode,videoformat,mirrormode,denoise,agc,lowlight,daynightmode,ircutdir,irtrigger,mshutter,"
+    echo "cameramode, nodf, capture, csienable,saturation,wdrbtargetbr,wdrtargetbr, brightness ,contrast , sharppen,wdrsharppen aespeed,lsc,boardmodel,yuvseq,i2cauxenable,i2cwen,awbgain,wbmode,mwbgain,antiflicker,awb_boffset,blcstrength,blcpos,exptime,paramsave"
     echo "new_expmode,new_mshutter,new_mgain"
 }
 
@@ -1433,6 +1433,32 @@ write_auto_shutter_max()
     printf "w max_shutter %d us\n" $max_shutter;
 }
 
+read_exptime()
+{
+    local regval=0;
+    local expreg_l=0;
+    local expreg_h=0;
+	local res=0;
+    res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x10 0xDA);
+	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x11 0x12);
+	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x13 0x01);
+    sleep 0.01;
+	res=$(./i2c_read $I2C_DEV $I2C_ADDR  0x14 );
+	expreg_h=$?;
+    sleep 0.01;
+    res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x10 0xDA);
+	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x11 0x13);
+	res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x13 0x01);
+    sleep 0.01;
+	res=$(./i2c_read $I2C_DEV $I2C_ADDR  0x14 );
+	expreg_l=$?;
+    #exptime=expreg*29.6us@30fps mode
+	regval=$((($expreg_h<<8)+$expreg_l));
+	exptime=`echo $regval 29.6 | awk '{printf "%d\n",$1*$2}'`
+	printf "r reg 0x%x, exptime is %d us\n" $regval $exptime;
+    
+}
+
 #######################Action# BEGIN##############################
 
 pinmux;
@@ -1565,6 +1591,9 @@ if [ ${MODE} = "read" ] ; then
                 ;;
         "auto_shutter_max")
             read_auto_shutter_max;
+                ;;
+        "exptime")
+            read_exptime;
                 ;;
 	esac
 fi
