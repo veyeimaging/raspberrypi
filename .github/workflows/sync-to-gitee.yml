@@ -20,7 +20,7 @@ jobs:
           git config --global user.name "mmxuxp"
           git config --global user.email "xumm@veye.cc"
           # 添加 Gitee 的组织仓库地址
-          git remote add gitee https://mmxuxp:${{ secrets.GITEE_TOKEN }}@gitee.com/veyeimaging/raspberrypi_v4l2.git
+          git remote add gitee https://mmxuxp:${{ secrets.GITEE_TOKEN }}@gitee.com/veyeimaging/raspberrypi.git
           # 推送源码
           git push -f gitee HEAD:main
           # 可选：推送标签
