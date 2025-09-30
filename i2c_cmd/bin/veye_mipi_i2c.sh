@@ -354,7 +354,7 @@ write_lowlight()
 {
 	local lowlight=0;
 	local res=0;
-	if [ $PARAM1 -eq 0 ] ; then
+	if [ $(printf "%d" $PARAM1) -eq 0 ]; then
 		printf "close lowlight mode\n";
 		res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x10 0xDA );
 		res=$(./i2c_write $I2C_DEV $I2C_ADDR  0x11 0x6D );
