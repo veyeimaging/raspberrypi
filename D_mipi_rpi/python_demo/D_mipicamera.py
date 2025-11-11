@@ -262,7 +262,7 @@ class mipi_camera(object):
     
     def __init__(self):
         self.camera_instance = c_void_p(0)
-    def init_camera(self, camera_interface=None):
+    def init_camera(self, camera_interface=None, format_=None):
         #//0or1 for CM
         cam_infe = CAMERA_INTERFACE(0,-1,(0,0),(0,0));
         if camera_interface is not None:
@@ -271,8 +271,15 @@ class mipi_camera(object):
             except (TypeError, ValueError) as e:
                 raise TypeError(
                     "Invalid camera_interface " )
+        if format_ is None:
+            frmt = FORMAT(1920, 1080, 30)
+        else:
+            try:
+                frmt = FORMAT(format_[0], format_[1], format_[2])
+            except (TypeError, ValueError, IndexError) as e:
+                raise TypeError("Invalid camera format " )
         check_status(
-            D_init_camera(byref(self.camera_instance), cam_infe),
+            D_init_camera_ex(byref(self.camera_instance), cam_infe, frmt),
             sys._getframe().f_code.co_name
         )
     def start_preview(self, fullscreen = True, opacity = 255, window = None):
